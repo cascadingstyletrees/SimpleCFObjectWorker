@@ -1,0 +1,15 @@
+{
+  "name": "simple-cf-worker",
+  "version": "1.0.0",
+  "description": "A simple Cloudflare Worker",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "tsc && node dist/index.test.js"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20230323.0",
+    "@types/node": "^20.12.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}
