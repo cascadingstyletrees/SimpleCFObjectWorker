@@ -16,39 +16,55 @@ export const html = (headers: Record<string, string>, cf: any) => `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cloudflare Request Inspector</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #111;
-      --text: #e0e0e0;
-      --accent: #f48120;
-      --card-bg: #1e1e1e;
-      --border: #333;
+      --bg: #0f172a;
+      --text: #e2e8f0;
+      --accent: #f59e0b;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
       margin: 0;
-      padding: 20px;
+      padding: 40px 20px;
       line-height: 1.6;
     }
     .container {
       max-width: 1200px;
       margin: 0 auto;
     }
-    h1, h2 { color: var(--accent); }
-    h1 { border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+    h1, h2 { color: var(--text); margin-top: 0; }
+    h1 {
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 15px;
+      margin-bottom: 30px;
+      font-weight: 300;
+      letter-spacing: -0.5px;
+    }
+    h2 {
+      font-size: 1.25rem;
+      margin-bottom: 15px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 25px;
     }
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 20px;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: var(--shadow);
     }
     table {
       width: 100%;
@@ -57,16 +73,34 @@ export const html = (headers: Record<string, string>, cf: any) => `
     }
     th, td {
       text-align: left;
-      padding: 8px;
-      border-bottom: 1px solid #333;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
       word-break: break-all;
     }
-    th { color: #888; width: 40%; }
+    th {
+      color: var(--text);
+      opacity: 0.6;
+      width: 35%;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    tr:last-child th, tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) { background-color: rgba(255,255,255,0.02); }
+    tr:hover { background-color: rgba(255,255,255,0.04); }
+
     code {
       font-family: 'Courier New', monospace;
       color: #76c7c0;
     }
     .value-loading { color: #888; font-style: italic; }
+
+    /* Scrollbar for the page */
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
   </style>
 </head>
 <body>
@@ -76,8 +110,8 @@ export const html = (headers: Record<string, string>, cf: any) => `
     <div class="grid">
       <!-- Server Side Info -->
       <div class="card">
-        <h2>☁️ Server-Side (Cloudflare)</h2>
-        <p>Information visible to the Cloudflare Worker.</p>
+        <h2><span>☁️</span> Server-Side (Cloudflare)</h2>
+        <p style="margin-bottom: 20px; opacity: 0.8; font-size: 0.9rem;">Information visible to the Cloudflare Worker.</p>
         <table>
           <tbody>
             <tr><th>Method</th><td>${escapeHtml(cf?.requestMethod || 'GET')}</td></tr>
@@ -94,8 +128,9 @@ export const html = (headers: Record<string, string>, cf: any) => `
 
       <!-- Headers -->
       <div class="card">
-        <h2>📨 Request Headers</h2>
-        <div style="max-height: 400px; overflow-y: auto;">
+        <h2><span>📨</span> Request Headers</h2>
+        <!-- Removed max-height/overflow-y to allow full expansion -->
+        <div>
           <table>
             <tbody>
               ${Object.entries(headers).map(([k, v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(v)}</td></tr>`).join('')}
@@ -106,8 +141,8 @@ export const html = (headers: Record<string, string>, cf: any) => `
 
       <!-- Client Side Fingerprint -->
       <div class="card">
-        <h2>🕵️ Client-Side Fingerprint</h2>
-        <p>Information gathered via JavaScript in your browser.</p>
+        <h2><span>🕵️</span> Client-Side Fingerprint</h2>
+        <p style="margin-bottom: 20px; opacity: 0.8; font-size: 0.9rem;">Information gathered via JavaScript in your browser.</p>
         <table id="fingerprint-table">
           <tr><th>Screen Resolution</th><td id="fp-screen" class="value-loading">Calculating...</td></tr>
           <tr><th>Color Depth</th><td id="fp-depth" class="value-loading">Calculating...</td></tr>
