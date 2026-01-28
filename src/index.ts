@@ -7,7 +7,7 @@ const app = new Hono()
 
 // JSON Inspector: Returns full request details
 app.get('/json', (c) => {
-  const cf = c.req.raw.cf
+  const cf = c.req.raw.cf || {}
   const headers = c.req.header()
 
   return c.json({
