@@ -119,6 +119,8 @@ export const html = (headers: Record<string, string>, cf: any) => `
           <tr><th>Touch Support</th><td id="fp-touch" class="value-loading">Calculating...</td></tr>
           <tr><th>Canvas Hash</th><td id="fp-canvas" class="value-loading">Calculating...</td></tr>
           <tr><th>WebGL Renderer</th><td id="fp-webgl" class="value-loading">Calculating...</td></tr>
+          <tr><th>FingerprintJS ID</th><td id="fp-fingerprintjs" class="value-loading">Loading...</td></tr>
+          <tr><th>ThumbmarkJS ID</th><td id="fp-thumbmarkjs" class="value-loading">Loading...</td></tr>
         </table>
       </div>
     </div>
@@ -127,6 +129,33 @@ export const html = (headers: Record<string, string>, cf: any) => `
   <script>
     // Fingerprinting Logic
     (async () => {
+      // Load FingerprintJS
+      try {
+        const fpPromise = import('https://openfpcdn.io/fingerprintjs/v4')
+          .then(FingerprintJS => FingerprintJS.load());
+        const fp = await fpPromise;
+        const result = await fp.get();
+        document.getElementById('fp-fingerprintjs').textContent = result.visitorId;
+      } catch (e) {
+        console.error('FingerprintJS error:', e);
+        document.getElementById('fp-fingerprintjs').textContent = 'Error';
+      }
+
+      // Load ThumbmarkJS
+      try {
+        await import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js');
+        if (window.ThumbmarkJS) {
+          const tm = new window.ThumbmarkJS.Thumbmark();
+          const result = await tm.get();
+          document.getElementById('fp-thumbmarkjs').textContent = result.thumbmark || result;
+        } else {
+          document.getElementById('fp-thumbmarkjs').textContent = 'Failed to load';
+        }
+      } catch (e) {
+        console.error('ThumbmarkJS error:', e);
+        document.getElementById('fp-thumbmarkjs').textContent = 'Error';
+      }
+
       // Basic Info
       document.getElementById('fp-screen').textContent = window.screen.width + 'x' + window.screen.height;
       document.getElementById('fp-depth').textContent = window.screen.colorDepth + '-bit';
