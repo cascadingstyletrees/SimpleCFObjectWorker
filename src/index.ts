@@ -26,14 +26,13 @@ export default {
           ? req.cf
           : { error: "The `cf` object is not available inside the preview." };
 
-      // Convert the request headers into an object and format them nicely as a JSON string
+      // Convert the request headers into an object
       const headersObject = Object.fromEntries(req.headers)
-      const requestHeaders = JSON.stringify(headersObject, null, 2)
 
       // Create the JSON response, combining the Cloudflare Object and the request headers
       const jsonResponse = {
         ...data,
-        requestHeaders: JSON.parse(requestHeaders),
+        requestHeaders: headersObject,
       }
 
       // Convert the JSON response into a formatted string
