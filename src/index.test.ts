@@ -74,6 +74,7 @@ describe('Worker', () => {
     // Should NOT contain the raw script tag
     expect(text).not.toContain(malicious)
     // Should contain the escaped version
-    expect(text).toContain("&lt;script&gt;alert(&#039;XSS&#039;)&lt;/script&gt;")
+    // Hono JSX escapes single quotes as &#39;
+    expect(text).toContain("&lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;")
   })
 })
