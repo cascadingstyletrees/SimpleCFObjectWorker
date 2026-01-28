@@ -10,7 +10,7 @@ describe('Worker', () => {
     expect(res.headers.get('content-type')).toContain('text/html')
     const text = await res.text()
     expect(text).toContain('Request Inspector')
-    expect(text).toContain('Client-Side Fingerprint')
+    expect(text).toContain('Client Fingerprint')
   })
 
   it('should return JSON details on /json', async () => {
