@@ -66,9 +66,9 @@ const Layout = (props: { children: any, title: string }) => {
   )
 }
 
-const Card = ({ title, icon, description, children, className = "", w="6", h="auto" }: { title: string, icon: any, description?: string, children: any, className?: string, w?: string, h?: string }) => {
+const Card = ({ title, icon, description, children, className = "", w="6", h="auto", x, y }: { title: string, icon: any, description?: string, children: any, className?: string, w?: string, h?: string, x?: string, y?: string }) => {
   return (
-    <div class={`grid-stack-item ${className}`} gs-w={w} gs-h={h}>
+    <div class={`grid-stack-item ${className}`} gs-w={w} gs-h={h} gs-x={x} gs-y={y}>
       <div class="grid-stack-item-content bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm transition-colors duration-200" style="position: relative; height: auto; inset: auto;">
         <div class="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-start cursor-move grid-stack-item-header">
            <div class="flex-1 min-w-0">
@@ -329,14 +329,14 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
       <div class="grid-stack">
         {/* Server Side Info */}
-        <Card title="Server-Side" icon={Icons.Cloud} description="Information visible to Cloudflare" w="6">
+        <Card title="Server-Side" icon={Icons.Cloud} description="Information visible to Cloudflare" w="6" x="0" y="0">
           <div class="overflow-x-auto">
             <RecursiveTable data={props.cf} />
           </div>
         </Card>
 
         {/* Headers */}
-        <Card title="Request Headers" icon={Icons.Inbox} description="HTTP headers sent by your client" w="6">
+        <Card title="Request Headers" icon={Icons.Inbox} description="HTTP headers sent by your client" w="6" x="6" y="0">
           <div class="max-h-[600px] overflow-y-auto custom-scrollbar">
              <table class="w-full text-sm text-left border-collapse">
               <thead class="bg-gray-50 dark:bg-gray-900/50 sticky top-0 z-10 backdrop-blur-sm">
@@ -358,7 +358,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
         </Card>
 
         {/* Client Side Fingerprint */}
-        <Card title="Client Fingerprint" icon={Icons.Chip} description="Browser signals gathered via JS" w="6">
+        <Card title="Client Fingerprint" icon={Icons.Chip} description="Browser signals gathered via JS" w="6" x="0" y="10">
           <div class="p-0">
              <table class="w-full text-sm text-left border-collapse" id="fingerprint-table">
               <tbody>
