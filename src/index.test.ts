@@ -1,63 +1,79 @@
-import worker from './index';
-import { strict as assert } from 'assert';
+import { describe, it, expect } from 'vitest'
+import worker from './index'
 
-async function testHtmlEscaping() {
-  console.log('Running test: should escape HTML in headers');
+describe('Worker', () => {
+  it('should return HTML dashboard on root', async () => {
+    const req = new Request('http://example.com/')
+    const res = await worker.fetch(req, {}, {} as any)
 
-  const maliciousHeaderValue = "<script>alert('XSS')</script>";
-  const headers = new Headers({
-    'X-Malicious-Header': maliciousHeaderValue,
-  });
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toContain('text/html')
+    const text = await res.text()
+    expect(text).toContain('Request Inspector')
+    expect(text).toContain('Client-Side Fingerprint')
+  })
 
-  const request = new Request('http://localhost/', { headers });
-  const response = await worker.fetch(request);
-  const text = await response.text();
+  it('should return JSON details on /json', async () => {
+    const req = new Request('http://example.com/json', {
+        headers: { 'x-test-header': 'foobar' }
+    })
+    // Mock cf object
+    const env = {}
+    const ctx = { waitUntil: () => {}, passThroughOnException: () => {} }
+    // Hono handles the fetch, but for testing the worker export we can call it directly
+    // Ideally we pass a mocked cf object if we want to test it, but Request init doesn't easily support it in standard Request constructor without the Cloudflare types augmentation working perfectly in tests.
+    // However, Hono reads from req.raw.cf.
 
-  // console.log('Response body:', text);
+    // We can use the app.request method for unit testing Hono, but here we are testing the worker export.
+    const res = await worker.fetch(req, env, ctx)
 
-  assert.ok(
-    !text.includes(maliciousHeaderValue),
-    'Test failed: Malicious header was not escaped in the HTML response.'
-  );
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toContain('application/json')
 
-  console.log('Test passed: Malicious header was correctly escaped.');
-}
+    const data = await res.json() as any
+    expect(data.requestHeaders['x-test-header']).toBe('foobar')
+  })
 
-async function testJsonEndpoint() {
-  console.log('Running test: JSON endpoint should return correct structure');
+  it('should return client IP on /ip', async () => {
+    // We can't easily mock the CF-Connecting-IP header in the incoming request object effectively unless we use a specific helper or just trust the header passing.
+    const req = new Request('http://example.com/ip', {
+        headers: { 'CF-Connecting-IP': '1.2.3.4' }
+    })
+    const res = await worker.fetch(req, {}, {} as any)
+    expect(await res.text()).toBe('1.2.3.4')
+  })
 
-  const headers = new Headers({
-    'x-test-header': 'test-value'
-  });
+  it('should echo custom status code', async () => {
+    const res = await worker.fetch(new Request('http://example.com/status/418'), {}, {} as any)
+    expect(res.status).toBe(418)
+    expect(await res.text()).toContain('Returned status: 418')
+  })
 
-  const request = new Request('http://localhost/json', { headers });
-  const response = await worker.fetch(request);
+  it('should handle invalid status code gracefully', async () => {
+    const res = await worker.fetch(new Request('http://example.com/status/999'), {}, {} as any)
+    // Expect 400 Bad Request
+    expect(res.status).toBe(400)
+  })
 
-  assert.equal(response.headers.get('content-type'), 'application/json');
+  it('should echo user agent', async () => {
+    const req = new Request('http://example.com/user-agent', {
+        headers: { 'User-Agent': 'Vitest-Agent' }
+    })
+    const res = await worker.fetch(req, {}, {} as any)
+    expect(await res.text()).toBe('Vitest-Agent')
+  })
 
-  const text = await response.text();
-  const json = JSON.parse(text);
+  it('should escape HTML in headers to prevent XSS', async () => {
+    const malicious = "<script>alert('XSS')</script>"
+    const req = new Request('http://example.com/', {
+        headers: { 'X-Malicious': malicious }
+    })
+    const res = await worker.fetch(req, {}, {} as any)
+    const text = await res.text()
 
-  // Verify structure
-  assert.ok(json.requestHeaders, 'Response should have requestHeaders');
-  assert.equal(json.requestHeaders['x-test-header'], 'test-value', 'Header value should match');
-
-  // Verify formatting (pretty print)
-  // The user explicitly wants pretty print, so we can check if it contains newlines/indentation
-  // or simply check that it is valid JSON (already checked by JSON.parse).
-  // Checking for indentation:
-  assert.ok(text.includes('\n'), 'Response should be pretty printed');
-  assert.ok(text.includes('  '), 'Response should be indented');
-
-  console.log('Test passed: JSON endpoint is correct.');
-}
-
-async function runTests() {
-  await testHtmlEscaping();
-  await testJsonEndpoint();
-}
-
-runTests().catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+    // Should NOT contain the raw script tag
+    expect(text).not.toContain(malicious)
+    // Should contain the escaped version
+    expect(text).toContain("&lt;script&gt;alert(&#039;XSS&#039;)&lt;/script&gt;")
+  })
+})

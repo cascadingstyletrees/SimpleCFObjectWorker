@@ -4,12 +4,19 @@
   "description": "A simple Cloudflare Worker",
   "main": "dist/index.js",
   "scripts": {
-    "test": "tsc && node dist/index.test.js"
+    "test": "vitest",
+    "dev": "wrangler dev"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.12.7",
     "@cloudflare/workers-types": "^4.20230323.0",
     "@types/node": "^20.12.12",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^3.0.5",
+    "wrangler": "^3.114.0"
+  },
+  "dependencies": {
+    "hono": "^4.11.7"
   }
 }
