@@ -268,7 +268,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
               </div>
             </Card>
           </div>
-        </div>
+        </Card>
 
         {/* Client Side Fingerprint */}
         <div class="grid-stack-item" gs-w="6">
