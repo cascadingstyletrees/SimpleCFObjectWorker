@@ -191,7 +191,7 @@ const Script = () => {
             }
 
             // Recalculate height
-            grid.update(widget, { h: 'auto' });
+            grid.resizeToContent(widget);
           });
         });
 
