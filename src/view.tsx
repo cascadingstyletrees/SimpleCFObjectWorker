@@ -39,6 +39,9 @@ const Layout = (props: { children: any, title: string }) => {
         <link href="https://cdnjs.cloudflare.com/ajax/libs/gridstack.js/10.0.1/gridstack.min.css" rel="stylesheet" />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gridstack.js/10.0.1/gridstack-all.js"></script>
         <script src="https://cdn.tailwindcss.com"></script>
+        <style dangerouslySetInnerHTML={{ __html: `
+          .grid-stack-item .ui-resizable-handle { display: none !important; }
+        `}} />
         <script dangerouslySetInnerHTML={{ __html: `
           tailwind.config = {
             darkMode: 'class',
@@ -56,7 +59,7 @@ const Layout = (props: { children: any, title: string }) => {
           }
         `}} />
       </head>
-      <body class="bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-200 font-sans p-4 md:p-8 antialiased transition-colors duration-200">
+      <body class="bg-gray-100 dark:bg-gray-950 text-sm text-gray-900 dark:text-gray-200 font-sans p-4 md:p-8 antialiased transition-colors duration-200">
         <div class="max-w-7xl mx-auto space-y-8">
           {props.children}
         </div>
@@ -67,8 +70,9 @@ const Layout = (props: { children: any, title: string }) => {
 }
 
 const Card = ({ title, icon, description, children, className = "", w="6", h="auto", x, y }: { title: string, icon: any, description?: string, children: any, className?: string, w?: string, h?: string, x?: string, y?: string }) => {
+  const hProps = h === "auto" ? {} : { "gs-h": h };
   return (
-    <div class={`grid-stack-item ${className}`} gs-w={w} gs-h={h} gs-x={x} gs-y={y}>
+    <div class={`grid-stack-item ${className}`} gs-w={w} {...hProps} gs-x={x} gs-y={y}>
       <div class="grid-stack-item-content bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm transition-colors duration-200" style="position: relative; height: auto; inset: auto;">
         <div class="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-start cursor-move grid-stack-item-header">
            <div class="flex-1 min-w-0">
@@ -100,7 +104,7 @@ const RecursiveTable = ({ data }: { data: any }) => {
       <tbody>
         {Object.entries(data).map(([key, value]) => (
           <tr class="border-b border-gray-200 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-            <th class="py-2 px-4 font-medium text-gray-500 dark:text-gray-400 w-1/3 align-top break-all">{key}</th>
+            <th class="py-2 px-4 font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap pr-4 align-top">{key}</th>
             <td class="py-2 px-4 text-gray-800 dark:text-gray-200 break-all align-top">
               {typeof value === 'object' && value !== null ? (
                 <RecursiveTable data={value} />
@@ -172,6 +176,9 @@ const Script = () => {
           disableOneColumnMode: false, // Allow mobile resizing/stacking
           draggable: { handle: '.grid-stack-item-header' }
         });
+
+        // Fade in grid after init
+        grid.el.classList.remove('opacity-0');
 
         document.querySelectorAll('.minimize-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
@@ -314,7 +321,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
     <Layout title="Cloudflare Request Inspector">
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-gray-200 dark:border-gray-800 pb-6 gap-4">
         <div>
-          <h1 class="text-3xl md:text-4xl font-bold text-orange-500 mb-2">Request Inspector</h1>
+          <h1 class="text-2xl md:text-3xl font-bold text-orange-500 mb-2">Request Inspector</h1>
           <p class="text-gray-500 dark:text-gray-400">Real-time analysis of your connection and browser environment.</p>
         </div>
         <button id="theme-toggle" class="p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm">
@@ -327,7 +334,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
         </button>
       </div>
 
-      <div class="grid-stack">
+      <div class="grid-stack opacity-0 transition-opacity duration-300">
         {/* Server Side Info */}
         <Card title="Server-Side" icon={Icons.Cloud} description="Information visible to Cloudflare" w="6" x="0" y="0">
           <div class="overflow-x-auto">
@@ -341,14 +348,14 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
              <table class="w-full text-sm text-left border-collapse">
               <thead class="bg-gray-50 dark:bg-gray-900/50 sticky top-0 z-10 backdrop-blur-sm">
                 <tr>
-                  <th class="py-3 px-4 text-gray-500 dark:text-gray-400 font-semibold border-b border-gray-200 dark:border-gray-800 w-1/3">Header</th>
+                  <th class="py-3 px-4 text-gray-500 dark:text-gray-400 font-semibold border-b border-gray-200 dark:border-gray-800 w-auto whitespace-nowrap">Header</th>
                   <th class="py-3 px-4 text-gray-500 dark:text-gray-400 font-semibold border-b border-gray-200 dark:border-gray-800">Value</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(props.headers).map(([key, value]) => (
                   <tr class="border-b border-gray-200 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
-                    <td class="py-2 px-4 font-mono text-orange-500 dark:text-orange-400/90 break-all align-top text-xs md:text-sm">{key}</td>
+                    <td class="py-2 px-4 font-mono text-orange-500 dark:text-orange-400/90 whitespace-nowrap align-top text-xs md:text-sm">{key}</td>
                     <td class="py-2 px-4 text-gray-800 dark:text-gray-300 break-all align-top font-mono text-xs md:text-sm">{value}</td>
                   </tr>
                 ))}
@@ -358,7 +365,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
         </Card>
 
         {/* Client Side Fingerprint */}
-        <Card title="Client Fingerprint" icon={Icons.Chip} description="Browser signals gathered via JS" w="6" x="0" y="10">
+        <Card title="Client Fingerprint" icon={Icons.Chip} description="Browser signals gathered via JS" w="6" x="0">
           <div class="p-0">
              <table class="w-full text-sm text-left border-collapse" id="fingerprint-table">
               <tbody>
