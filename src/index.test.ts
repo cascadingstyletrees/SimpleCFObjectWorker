@@ -19,7 +19,7 @@ describe('Worker', () => {
     })
     // Mock cf object
     const env = {}
-    const ctx = { waitUntil: () => {}, passThroughOnException: () => {} }
+    const ctx = { waitUntil: () => {}, passThroughOnException: () => {} } as any
     // Hono handles the fetch, but for testing the worker export we can call it directly
     // Ideally we pass a mocked cf object if we want to test it, but Request init doesn't easily support it in standard Request constructor without the Cloudflare types augmentation working perfectly in tests.
     // However, Hono reads from req.raw.cf.
