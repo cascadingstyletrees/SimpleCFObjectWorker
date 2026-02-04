@@ -177,6 +177,9 @@ const Script = () => {
           draggable: { handle: '.grid-stack-item-header' }
         });
 
+        // Force update heights to prevent overlap
+        grid.getGridItems().forEach(el => grid.resizeToContent(el));
+
         // Fade in grid after init
         grid.el.classList.remove('opacity-0');
 
@@ -365,7 +368,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
         </Card>
 
         {/* Client Side Fingerprint */}
-        <Card title="Client Fingerprint" icon={Icons.Chip} description="Browser signals gathered via JS" w="6" x="0">
+        <Card title="Client Fingerprint" icon={Icons.Chip} description="Browser signals gathered via JS" w="6" x="0" y="50">
           <div class="p-0">
              <table class="w-full text-sm text-left border-collapse" id="fingerprint-table">
               <tbody>
