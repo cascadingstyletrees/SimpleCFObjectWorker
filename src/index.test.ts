@@ -11,6 +11,9 @@ describe('Worker', () => {
     const text = await res.text()
     expect(text).toContain('Request Inspector')
     expect(text).toContain('Client Fingerprint')
+    // Verify that requestMethod is present (added via View logic)
+    expect(text).toContain('requestMethod')
+    expect(text).toContain('GET')
   })
 
   it('should return JSON details on /json', async () => {

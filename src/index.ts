@@ -63,13 +63,7 @@ app.get('/', (c) => {
   const cf = (c.req.raw.cf || {}) as Record<string, any>
   const headers = c.req.header()
 
-  // Create a copy to allow modification
-  const viewData = { ...cf }
-
-  // Mix in some extra request info if not present in cf
-  if (!viewData.requestMethod) viewData.requestMethod = c.req.method;
-
-  return c.html(View({ headers, cf: viewData }))
+  return c.html(View({ headers, cf, requestMethod: c.req.method }))
 })
 
 export default app

@@ -51,15 +51,29 @@ const Card = ({ title, icon, description, children, className = "" }: { title: s
   )
 }
 
-const RecursiveTable = ({ data }: { data: any }) => {
-  if (typeof data !== 'object' || data === null) {
+const RecursiveTable = ({ data, extras }: { data: any, extras?: Record<string, any> }) => {
+  const isDataObject = typeof data === 'object' && data !== null;
+
+  if (!isDataObject && !extras) {
     return <span class="break-all">{String(data)}</span>
   }
 
   return (
     <table class="w-full text-sm text-left border-collapse">
       <tbody>
-        {Object.entries(data).map(([key, value]) => (
+        {isDataObject && Object.entries(data).map(([key, value]) => (
+          <tr class="border-b border-gray-800 last:border-0 hover:bg-white/5 transition-colors">
+            <th class="py-2 px-4 font-medium text-gray-400 w-1/3 align-top break-all">{key}</th>
+            <td class="py-2 px-4 text-gray-200 break-all align-top">
+              {typeof value === 'object' && value !== null ? (
+                <RecursiveTable data={value} />
+              ) : (
+                String(value)
+              )}
+            </td>
+          </tr>
+        ))}
+        {extras && Object.entries(extras).map(([key, value]) => (
           <tr class="border-b border-gray-800 last:border-0 hover:bg-white/5 transition-colors">
             <th class="py-2 px-4 font-medium text-gray-400 w-1/3 align-top break-all">{key}</th>
             <td class="py-2 px-4 text-gray-200 break-all align-top">
@@ -178,7 +192,7 @@ const Script = () => {
   return <script dangerouslySetInnerHTML={{ __html: scriptContent }} />
 }
 
-export const View = (props: { headers: Record<string, string>, cf: any }) => {
+export const View = (props: { headers: Record<string, string>, cf: any, requestMethod?: string }) => {
   return (
     <Layout title="Cloudflare Request Inspector">
       <div class="mb-8 border-b border-gray-800 pb-6">
@@ -190,7 +204,10 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
         {/* Server Side Info */}
         <Card title="Server-Side" icon="☁️" description="Information visible to Cloudflare">
           <div class="overflow-x-auto">
-            <RecursiveTable data={props.cf} />
+            <RecursiveTable
+              data={props.cf}
+              extras={props.requestMethod && !props.cf?.requestMethod ? { requestMethod: props.requestMethod } : undefined}
+            />
           </div>
         </Card>
 
