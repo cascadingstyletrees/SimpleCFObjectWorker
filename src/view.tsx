@@ -36,12 +36,9 @@ const Layout = (props: { children: any, title: string }) => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{props.title}</title>
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/gridstack.js/10.0.1/gridstack.min.css" rel="stylesheet" />
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/gridstack.js/10.0.1/gridstack-all.js"></script>
+        <script src="https://unpkg.com/web-animations-js@2.3.2/web-animations.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/muuri@0.9.5/dist/muuri.min.js"></script>
         <script src="https://cdn.tailwindcss.com"></script>
-        <style dangerouslySetInnerHTML={{ __html: `
-          .grid-stack-item .ui-resizable-handle { display: none !important; }
-        `}} />
         <script dangerouslySetInnerHTML={{ __html: `
           tailwind.config = {
             darkMode: 'class',
@@ -69,12 +66,11 @@ const Layout = (props: { children: any, title: string }) => {
   )
 }
 
-const Card = ({ title, icon, description, children, className = "", w="6", h="auto", x, y }: { title: string, icon: any, description?: string, children: any, className?: string, w?: string, h?: string, x?: string, y?: string }) => {
-  const hProps = h === "auto" ? {} : { "gs-h": h };
+const Card = ({ title, icon, description, children, className = "" }: { title: string, icon: any, description?: string, children: any, className?: string }) => {
   return (
-    <div class={`grid-stack-item ${className}`} gs-w={w} {...hProps} gs-x={x} gs-y={y}>
-      <div class="grid-stack-item-content bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm transition-colors duration-200" style="position: relative; height: auto; inset: auto;">
-        <div class="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-start cursor-move grid-stack-item-header rounded-t-xl">
+    <div class={`item absolute w-full md:w-1/2 p-4 ${className}`}>
+      <div class="item-content bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm transition-colors duration-200">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-start cursor-move drag-handle rounded-t-xl">
            <div class="flex-1 min-w-0">
               <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                 {icon} <span class="truncate">{title}</span>
@@ -164,78 +160,40 @@ const Script = () => {
       updateTheme();
     })();
 
-    // GridStack & Minimize Logic
+    // Muuri & Minimize Logic
     document.addEventListener('DOMContentLoaded', () => {
       try {
+        const gridElement = document.querySelector('.grid-muuri');
+        if (!gridElement) return;
+
         // @ts-ignore
-        const grid = window.grid = GridStack.init({
-          float: true,
-          cellHeight: '80px', // Fixed height allows robust manual calculation
-          column: 12,
-          margin: 14, // Gap
-          disableOneColumnMode: false, // Allow mobile resizing/stacking
-          draggable: { handle: '.grid-stack-item-header' }
-        });
-
-        const updateWidgetHeight = (widget) => {
-           try {
-             const content = widget.querySelector('.grid-stack-item-content');
-             if (!content) return;
-
-             const h = content.scrollHeight;
-             const cellHeight = grid.getCellHeight();
-             // Over-estimate slightly to ensure fit (margin=0 assumption safe)
-             const rows = Math.ceil(h / cellHeight);
-
-             console.log('Updating widget height:', widget.innerText.split('\\n')[0], 'ContentH:', h, 'Rows:', rows);
-             grid.update(widget, {h: rows});
-           } catch(e) {
-             console.error('Update widget error:', e);
-           }
-        };
-
-        const resizeAll = () => {
-          console.log('ResizeAll called');
-          grid.getGridItems().forEach(el => updateWidgetHeight(el));
-        };
-
-        // Initial resize
-        resizeAll();
-
-        // Resize again when fully loaded (fonts, etc)
-        window.addEventListener('load', resizeAll);
-
-        // Safety timeout
-        setTimeout(resizeAll, 500);
-
-        // Use ResizeObserver for robust updates
-        const lastHeights = new Map();
-        const observer = new ResizeObserver((entries) => {
-          entries.forEach(entry => {
-            const widget = entry.target.closest('.grid-stack-item');
-            if (widget) {
-               const h = entry.target.scrollHeight;
-               const old = lastHeights.get(widget);
-               // Only update if height changed significantly (>5px)
-               if (!old || Math.abs(h - old) > 5) {
-                 lastHeights.set(widget, h);
-                 updateWidgetHeight(widget);
-               }
-            }
-          });
-        });
-
-        document.querySelectorAll('.grid-stack-item-content').forEach(el => {
-           observer.observe(el);
+        const grid = window.grid = new Muuri(gridElement, {
+          dragEnabled: true,
+          dragHandle: '.drag-handle',
+          layout: {
+            fillGaps: true
+          }
         });
 
         // Fade in grid after init
-        grid.el.classList.remove('opacity-0');
+        gridElement.classList.remove('opacity-0');
 
+        // Handle window resize
+        window.addEventListener('resize', () => {
+          grid.refreshItems().layout();
+        });
+
+        // Re-layout on load
+        window.addEventListener('load', () => grid.refreshItems().layout());
+
+        // Safety layout
+        setTimeout(() => grid.refreshItems().layout(), 500);
+
+        // Minimize Logic
         document.querySelectorAll('.minimize-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent drag start if clicking button
-            const widget = btn.closest('.grid-stack-item');
+            e.stopPropagation();
+            const widget = btn.closest('.item');
             const content = widget.querySelector('.widget-content');
             const isHidden = content.classList.contains('hidden');
 
@@ -249,15 +207,21 @@ const Script = () => {
               btn.querySelector('.icon-max').classList.remove('hidden');
             }
 
-            // Recalculate height
-            updateWidgetHeight(widget);
+            grid.refreshItems().layout();
           });
         });
 
-        grid.opts.draggable = { handle: '.grid-stack-item-header' };
+        // ResizeObserver for dynamic content
+        const observer = new ResizeObserver(() => {
+           requestAnimationFrame(() => {
+              grid.refreshItems().layout();
+           });
+        });
+
+        document.querySelectorAll('.widget-content').forEach(el => observer.observe(el));
 
       } catch (e) {
-        console.error('GridStack error:', e);
+        console.error('Muuri error:', e);
       }
     });
 
@@ -395,16 +359,16 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
         </button>
       </div>
 
-      <div class="grid-stack opacity-0 transition-opacity duration-300">
+      <div class="grid-muuri relative opacity-0 transition-opacity duration-300 -ml-4">
         {/* Server Side Info */}
-        <Card title="Server-Side" icon={Icons.Cloud} description="Information visible to Cloudflare" w="6" x="0" y="0">
+        <Card title="Server-Side" icon={Icons.Cloud} description="Information visible to Cloudflare">
           <div class="overflow-x-auto">
             <RecursiveTable data={flattenedCf} />
           </div>
         </Card>
 
         {/* Headers */}
-        <Card title="Request Headers" icon={Icons.Inbox} description="HTTP headers sent by your client" w="6" x="6" y="0">
+        <Card title="Request Headers" icon={Icons.Inbox} description="HTTP headers sent by your client">
           <div class="max-h-[600px] overflow-y-auto custom-scrollbar">
              <table class="w-full text-sm text-left border-collapse">
               <thead class="bg-gray-50 dark:bg-gray-900/50 sticky top-0 z-10 backdrop-blur-sm">
@@ -426,7 +390,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
         </Card>
 
         {/* Client Side Fingerprint */}
-        <Card title="Client Fingerprint" icon={Icons.Chip} description="Browser signals gathered via JS" w="6">
+        <Card title="Client Fingerprint" icon={Icons.Chip} description="Browser signals gathered via JS">
           <div class="p-0">
              <table class="w-full text-sm text-left border-collapse" id="fingerprint-table">
               <tbody>
