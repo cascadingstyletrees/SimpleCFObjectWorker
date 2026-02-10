@@ -117,8 +117,7 @@ const RecursiveTable = ({ data }: { data: any }) => {
   )
 }
 
-const Script = () => {
-  const scriptContent = `
+const SCRIPT_CONTENT = `
     // Theme Logic
     (() => {
       const btn = document.getElementById('theme-toggle');
@@ -324,7 +323,9 @@ const Script = () => {
       }
     })();
   `
-  return <script dangerouslySetInnerHTML={{ __html: scriptContent }} />
+
+const Script = () => {
+  return <script dangerouslySetInnerHTML={{ __html: SCRIPT_CONTENT }} />
 }
 
 const flattenObject = (obj: any, prefix = '') => {
