@@ -18,107 +18,7 @@ const TAILWIND_CONFIG = `
   }
 `
 
-const Icons = {
-  Cloud: (
-    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
-    </svg>
-  ),
-  Inbox: (
-    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-    </svg>
-  ),
-  Chip: (
-    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
-    </svg>
-  ),
-  ChevronUp: (
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-    </svg>
-  ),
-  ChevronDown: (
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-    </svg>
-  )
-}
-
-const Layout = (props: { children: any, title: string }) => {
-  return (
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>{props.title}</title>
-        <script src="https://unpkg.com/web-animations-js@2.3.2/web-animations.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/muuri@0.9.5/dist/muuri.min.js"></script>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script dangerouslySetInnerHTML={{ __html: TAILWIND_CONFIG }} />
-      </head>
-      <body class="bg-gray-100 dark:bg-gray-950 text-sm text-gray-900 dark:text-gray-200 font-sans p-4 md:p-8 antialiased transition-colors duration-200">
-        <div class="max-w-7xl mx-auto space-y-8">
-          {props.children}
-        </div>
-        <Script />
-      </body>
-    </html>
-  )
-}
-
-const Card = ({ title, icon, description, children, className = "" }: { title: string, icon: any, description?: string, children: any, className?: string }) => {
-  return (
-    <div class={`item absolute w-full md:w-1/2 p-4 ${className}`}>
-      <div class="item-content bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm transition-colors duration-200">
-        <div class="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-start cursor-move drag-handle rounded-t-xl">
-           <div class="flex-1 min-w-0">
-              <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                {icon} <span class="truncate">{title}</span>
-              </h2>
-              {description && <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{description}</p>}
-           </div>
-           <button class="minimize-btn text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 ml-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-             <span class="icon-min">{Icons.ChevronUp}</span>
-             <span class="icon-max hidden">{Icons.ChevronDown}</span>
-           </button>
-        </div>
-        <div class="p-0 relative widget-content">
-           {children}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-const RecursiveTable = ({ data }: { data: any }) => {
-  if (typeof data !== 'object' || data === null) {
-    return <span class="break-all text-gray-600 dark:text-gray-300">{String(data)}</span>
-  }
-
-  return (
-    <table class="w-full text-sm text-left border-collapse">
-      <tbody>
-        {Object.entries(data).map(([key, value]) => (
-          <tr class="border-b border-gray-200 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-            <th class="py-2 px-4 font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap pr-4 align-top">{key}</th>
-            <td class="py-2 px-4 text-gray-800 dark:text-gray-200 break-all align-top">
-              {typeof value === 'object' && value !== null ? (
-                <RecursiveTable data={value} />
-              ) : (
-                String(value)
-              )}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )
-}
-
-const Script = () => {
-  const scriptContent = `
+const SCRIPT_CONTENT = `
     // Theme Logic
     (() => {
       const btn = document.getElementById('theme-toggle');
@@ -168,7 +68,6 @@ const Script = () => {
         const gridElement = document.querySelector('.grid-muuri');
         if (!gridElement) return;
 
-        // @ts-ignore
         const grid = window.grid = new Muuri(gridElement, {
           dragEnabled: true,
           dragHandle: '.drag-handle',
@@ -323,8 +222,109 @@ const Script = () => {
         document.getElementById('fp-webgl').textContent = 'Error';
       }
     })();
-  `
-  return <script dangerouslySetInnerHTML={{ __html: scriptContent }} />
+`
+
+const Icons = {
+  Cloud: (
+    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+    </svg>
+  ),
+  Inbox: (
+    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+    </svg>
+  ),
+  Chip: (
+    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+    </svg>
+  ),
+  ChevronUp: (
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+    </svg>
+  ),
+  ChevronDown: (
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+    </svg>
+  )
+}
+
+const Layout = (props: { children: any, title: string }) => {
+  return (
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{props.title}</title>
+        <script src="https://unpkg.com/web-animations-js@2.3.2/web-animations.min.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/muuri@0.9.5/dist/muuri.min.js" defer></script>
+        <script src="https://cdn.tailwindcss.com" defer></script>
+        <script dangerouslySetInnerHTML={{ __html: TAILWIND_CONFIG }} />
+      </head>
+      <body class="bg-gray-100 dark:bg-gray-950 text-sm text-gray-900 dark:text-gray-200 font-sans p-4 md:p-8 antialiased transition-colors duration-200">
+        <div class="max-w-7xl mx-auto space-y-8">
+          {props.children}
+        </div>
+        <Script />
+      </body>
+    </html>
+  )
+}
+
+const Card = ({ title, icon, description, children, className = "" }: { title: string, icon: any, description?: string, children: any, className?: string }) => {
+  return (
+    <div class={`item absolute w-full md:w-1/2 p-4 ${className}`}>
+      <div class="item-content bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm transition-colors duration-200">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-start cursor-move drag-handle rounded-t-xl">
+           <div class="flex-1 min-w-0">
+              <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                {icon} <span class="truncate">{title}</span>
+              </h2>
+              {description && <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{description}</p>}
+           </div>
+           <button class="minimize-btn text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 ml-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+             <span class="icon-min">{Icons.ChevronUp}</span>
+             <span class="icon-max hidden">{Icons.ChevronDown}</span>
+           </button>
+        </div>
+        <div class="p-0 relative widget-content">
+           {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const RecursiveTable = ({ data }: { data: any }) => {
+  if (typeof data !== 'object' || data === null) {
+    return <span class="break-all text-gray-600 dark:text-gray-300">{String(data)}</span>
+  }
+
+  return (
+    <table class="w-full text-sm text-left border-collapse">
+      <tbody>
+        {Object.entries(data).map(([key, value]) => (
+          <tr class="border-b border-gray-200 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+            <th class="py-2 px-4 font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap pr-4 align-top">{key}</th>
+            <td class="py-2 px-4 text-gray-800 dark:text-gray-200 break-all align-top">
+              {typeof value === 'object' && value !== null ? (
+                <RecursiveTable data={value} />
+              ) : (
+                String(value)
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+const Script = () => {
+  return <script dangerouslySetInnerHTML={{ __html: SCRIPT_CONTENT }} />
 }
 
 const flattenObject = (obj: any, prefix = '') => {
