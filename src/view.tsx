@@ -54,8 +54,8 @@ const Layout = (props: { children: any, title: string }) => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{props.title}</title>
-        <script src="https://unpkg.com/web-animations-js@2.3.2/web-animations.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/muuri@0.9.5/dist/muuri.min.js"></script>
+        <script defer src="https://unpkg.com/web-animations-js@2.3.2/web-animations.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/muuri@0.9.5/dist/muuri.min.js"></script>
         <script src="https://cdn.tailwindcss.com"></script>
         <script dangerouslySetInnerHTML={{ __html: TAILWIND_CONFIG }} />
       </head>
