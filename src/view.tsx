@@ -168,7 +168,6 @@ const SCRIPT_CONTENT = `
         const gridElement = document.querySelector('.grid-muuri');
         if (!gridElement) return;
 
-        // @ts-ignore
         const grid = window.grid = new Muuri(gridElement, {
           dragEnabled: true,
           dragHandle: '.drag-handle',
