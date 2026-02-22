@@ -13,7 +13,7 @@ describe('Worker', () => {
     expect(text).toContain('Request Inspector')
     expect(text).toContain('Client Fingerprint')
     // Verify some mock data is rendered
-    expect(text).toContain('San Angelo')
+    expect(text).toContain('Austin')
     expect(text).toContain('US')
   })
 
