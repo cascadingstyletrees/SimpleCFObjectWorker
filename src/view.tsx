@@ -265,6 +265,33 @@ const SCRIPT_CONTENT = `
         }
       };
 
+      const scriptLoadCache = new Map();
+
+      const loadExternalScript = async (urls) => {
+        for (const url of urls) {
+          if (!url) continue;
+          if (!scriptLoadCache.has(url)) {
+            scriptLoadCache.set(url, new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = url;
+              script.async = true;
+              script.crossOrigin = 'anonymous';
+              script.onload = () => resolve();
+              script.onerror = () => reject(new Error('Failed to load: ' + url));
+              document.head.appendChild(script);
+            }));
+          }
+
+          try {
+            await scriptLoadCache.get(url);
+            return true;
+          } catch {
+            // Try next candidate URL
+          }
+        }
+        return false;
+      };
+
       const hashString = async (input) => {
         if (!window.crypto?.subtle) return null;
         const digest = await crypto.subtle.digest('SHA-256', textEncoder.encode(input));
@@ -304,27 +331,40 @@ const SCRIPT_CONTENT = `
           name: 'ClientJS',
           rawId: 'fp-raw-clientjs',
           loadAndCollect: async () => {
-            await import('https://cdn.jsdelivr.net/npm/clientjs@0.2.1/dist/client.min.js');
+            const loaded = await loadExternalScript([
+              'https://cdn.jsdelivr.net/npm/clientjs@0.2.1/dist/client.min.js',
+              'https://unpkg.com/clientjs@0.2.1/dist/client.min.js'
+            ]);
+            if (!loaded) return null;
             if (!window.ClientJS) return null;
             const client = new window.ClientJS();
+            const readClientJs = (methodName) => {
+              const fn = client?.[methodName];
+              if (typeof fn !== 'function') return null;
+              try {
+                return fn.call(client);
+              } catch {
+                return null;
+              }
+            };
             const raw = {
-              browser: client.getBrowser(),
-              browserVersion: client.getBrowserVersion(),
-              browserMajorVersion: client.getBrowserMajorVersion(),
-              engine: client.getEngine(),
-              engineVersion: client.getEngineVersion(),
-              os: client.getOS(),
-              osVersion: client.getOSVersion(),
-              device: client.getDevice(),
-              deviceType: client.getDeviceType(),
-              cpu: client.getCPU(),
-              currentResolution: client.getCurrentResolution(),
-              availableResolution: client.getAvailableResolution(),
-              timezone: client.getTimeZone(),
-              language: client.getLanguage(),
-              platform: client.getPlatform(),
-              vendor: client.getVendor(),
-              fingerprint: client.getFingerprint()
+              browser: readClientJs('getBrowser'),
+              browserVersion: readClientJs('getBrowserVersion'),
+              browserMajorVersion: readClientJs('getBrowserMajorVersion'),
+              engine: readClientJs('getEngine'),
+              engineVersion: readClientJs('getEngineVersion'),
+              os: readClientJs('getOS'),
+              osVersion: readClientJs('getOSVersion'),
+              device: readClientJs('getDevice'),
+              deviceType: readClientJs('getDeviceType'),
+              cpu: readClientJs('getCPU'),
+              currentResolution: readClientJs('getCurrentResolution'),
+              availableResolution: readClientJs('getAvailableResolution'),
+              timezone: readClientJs('getTimeZone'),
+              language: readClientJs('getLanguage'),
+              platform: readClientJs('getPlatform'),
+              vendor: readClientJs('getVendor'),
+              fingerprint: readClientJs('getFingerprint')
             };
             const signature = [raw.browser, raw.os, raw.device].join(' | ');
             return { value: signature + ' #' + raw.fingerprint, raw };
@@ -335,11 +375,11 @@ const SCRIPT_CONTENT = `
           name: 'FingerprintX',
           rawId: 'fp-raw-fingerprintx',
           loadAndCollect: async () => {
-            try {
-              await import('https://cdn.jsdelivr.net/npm/fingerprintx@0.1.4/dist/fingerprintx.min.js');
-            } catch {
-              await import('https://unpkg.com/fingerprintx@0.1.4/dist/fingerprintx.min.js');
-            }
+            const loaded = await loadExternalScript([
+              'https://cdn.jsdelivr.net/npm/fingerprintx@0.1.4/dist/fingerprintx.min.js',
+              'https://unpkg.com/fingerprintx@0.1.4/dist/fingerprintx.min.js'
+            ]);
+            if (!loaded) return null;
 
             const fpAny = window.FingerprintX || window.fingerprintx || window.FPX;
             if (!fpAny) return null;
