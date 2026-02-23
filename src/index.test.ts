@@ -12,6 +12,60 @@ describe('Worker', () => {
     const text = await res.text()
     expect(text).toContain('Request Inspector')
     expect(text).toContain('Client Fingerprint')
+
+    // Verify fingerprint cells are rendered in SSR HTML
+    const fingerprintCellIds = [
+      'fp-uach',
+      'fp-audio',
+      'fp-fonts',
+      'fp-media-cap',
+      'fp-canvas',
+      'fp-webgl',
+      'fp-fingerprintjs',
+      'fp-thumbmarkjs',
+      'fp-clientjs',
+      'fp-fingerprintx',
+      'fp-audiohash'
+    ]
+    for (const id of fingerprintCellIds) {
+      expect(text).toContain(`id="${id}"`)
+    }
+
+    // Verify provider labels remain visible in fingerprint table header cells
+    const providerRows = [
+      { label: 'UA-CH', id: 'fp-uach' },
+      { label: 'AudioContext', id: 'fp-audio' },
+      { label: 'Fonts', id: 'fp-fonts' },
+      { label: 'Media Capability', id: 'fp-media-cap' },
+      { label: 'Canvas Hash', id: 'fp-canvas' },
+      { label: 'WebGL', id: 'fp-webgl' },
+      { label: 'FingerprintJS', id: 'fp-fingerprintjs' },
+      { label: 'ThumbmarkJS', id: 'fp-thumbmarkjs' },
+      { label: 'ClientJS', id: 'fp-clientjs' },
+      { label: 'FingerprintX', id: 'fp-fingerprintx' },
+      { label: 'Audio Signal Hash', id: 'fp-audiohash' }
+    ]
+    const escapeRegExp = (value: string) => value.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')
+    for (const { label, id } of providerRows) {
+      const escaped = escapeRegExp(label)
+      expect(text).toMatch(new RegExp(`<th[^>]*>${escaped}</th><td id=\"${id}\"`, 's'))
+    }
+
+    // Verify raw JSON containers exist for providers that expose details
+    const rawContainerIds = [
+      'fp-raw-fpjs-container',
+      'fp-raw-thumbmark-container',
+      'fp-raw-clientjs-container',
+      'fp-raw-fingerprintx-container',
+      'fp-raw-uach-container',
+      'fp-raw-audio-container',
+      'fp-raw-fonts-container',
+      'fp-raw-media-cap-container'
+    ]
+    for (const id of rawContainerIds) {
+      expect(text).toContain(`id="${id}"`)
+    }
+
     // Verify some mock data is rendered
     expect(text).toContain('Austin')
     expect(text).toContain('US')
