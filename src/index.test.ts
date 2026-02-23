@@ -12,6 +12,54 @@ describe('Worker', () => {
     const text = await res.text()
     expect(text).toContain('Request Inspector')
     expect(text).toContain('Client Fingerprint')
+
+    // Verify fingerprint cells are rendered in SSR HTML
+    const fingerprintCellIds = [
+      'fp-uach',
+      'fp-audio',
+      'fp-fonts',
+      'fp-media-cap',
+      'fp-canvas',
+      'fp-webgl',
+      'fp-fingerprintjs',
+      'fp-thumbmarkjs',
+      'fp-clientjs',
+      'fp-audiohash'
+    ]
+    for (const id of fingerprintCellIds) {
+      expect(text).toContain(`id="${id}"`)
+    }
+
+    // Verify provider labels remain visible to users
+    const providerLabels = [
+      'UA-CH',
+      'AudioContext',
+      'Fonts',
+      'Media Capability',
+      'Canvas Hash',
+      'WebGL',
+      'FingerprintJS',
+      'ThumbmarkJS',
+      'ClientJS',
+      'Audio Signal Hash'
+    ]
+    for (const label of providerLabels) {
+      expect(text).toContain(label)
+    }
+
+    // Verify raw JSON containers exist for providers that expose details
+    const rawContainerIds = [
+      'fp-raw-fpjs-container',
+      'fp-raw-thumbmark-container',
+      'fp-raw-uach-container',
+      'fp-raw-audio-container',
+      'fp-raw-fonts-container',
+      'fp-raw-media-cap-container'
+    ]
+    for (const id of rawContainerIds) {
+      expect(text).toContain(`id="${id}"`)
+    }
+
     // Verify some mock data is rendered
     expect(text).toContain('Austin')
     expect(text).toContain('US')
