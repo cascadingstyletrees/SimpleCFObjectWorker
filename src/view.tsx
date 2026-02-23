@@ -236,6 +236,12 @@ const SCRIPT_CONTENT = `
         if (el) el.textContent = value;
       };
 
+      const truncateValue = (value, maxLength = 96) => {
+        const safe = String(value ?? 'Unavailable');
+        if (safe.length <= maxLength) return safe;
+        return safe.slice(0, maxLength - 3) + '...';
+      };
+
       const setRaw = (id, payload) => {
         if (!id || payload === undefined) return;
         const rawEl = document.getElementById(id);
@@ -363,6 +369,153 @@ const SCRIPT_CONTENT = `
       document.getElementById('fp-memory').textContent = (navigator.deviceMemory || 'Unknown') + ' GB';
       document.getElementById('fp-touch').textContent = ('ontouchstart' in window || navigator.maxTouchPoints > 0) ? 'Yes' : 'No';
 
+      // UA Client Hints
+      try {
+        if (!navigator.userAgentData) {
+          setText('fp-uach', 'Unavailable');
+        } else {
+          const brands = Array.isArray(navigator.userAgentData.brands)
+            ? navigator.userAgentData.brands.map((item) => item.brand + '/' + item.version).join(', ')
+            : 'Unknown';
+          const summary = [
+            'P:' + (navigator.userAgentData.platform || 'Unknown'),
+            'M:' + (navigator.userAgentData.mobile ? '1' : '0'),
+            'B:' + truncateValue(brands, 52)
+          ].join(' | ');
+          setText('fp-uach', truncateValue(summary, 110));
+          setRaw('fp-raw-uach', {
+            brands: navigator.userAgentData.brands,
+            mobile: navigator.userAgentData.mobile,
+            platform: navigator.userAgentData.platform
+          });
+        }
+      } catch (e) {
+        console.error('UA-CH error:', e);
+        setText('fp-uach', 'Error');
+      }
+
+      // AudioContext Fingerprint
+      try {
+        const AudioContextCtor = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        if (!AudioContextCtor) {
+          setText('fp-audio', 'Unavailable');
+        } else {
+          const context = new AudioContextCtor(1, 4096, 44100);
+          const oscillator = context.createOscillator();
+          const analyser = context.createAnalyser();
+          oscillator.type = 'sine';
+          oscillator.frequency.value = 997;
+          analyser.fftSize = 2048;
+          oscillator.connect(analyser);
+          analyser.connect(context.destination);
+          oscillator.start(0);
+          const buffer = await context.startRendering();
+          const data = buffer.getChannelData(0);
+          let numericHash = 0;
+          const signature = [];
+          for (let i = 1000; i < 1128; i++) {
+            const sample = Math.round(data[i] * 1e6);
+            signature.push(sample);
+            numericHash = (numericHash * 33 + (sample & 0xffff)) >>> 0;
+          }
+          setText('fp-audio', numericHash.toString(16).padStart(8, '0'));
+          setRaw('fp-raw-audio', {
+            hash: numericHash,
+            sampleRate: buffer.sampleRate,
+            signature
+          });
+        }
+      } catch (e) {
+        console.error('AudioContext collector error:', e);
+        setText('fp-audio', 'Error');
+      }
+
+      // Fonts Fingerprint
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          setText('fp-fonts', 'Unavailable');
+        } else {
+          const text = 'mmmmmmmmmmlli';
+          const size = '72px';
+          const baseFamilies = ['monospace', 'sans-serif', 'serif'];
+          const testFonts = ['Arial', 'Times New Roman', 'Courier New', 'Georgia', 'Trebuchet MS', 'Comic Sans MS', 'Impact', 'Monaco'];
+          const baseWidths = {};
+
+          for (const baseFamily of baseFamilies) {
+            ctx.font = size + ' ' + baseFamily;
+            baseWidths[baseFamily] = ctx.measureText(text).width;
+          }
+
+          const detected = [];
+          const widthSignature = [];
+          for (const font of testFonts) {
+            let matched = false;
+            for (const baseFamily of baseFamilies) {
+              ctx.font = size + " '" + font + "'," + baseFamily;
+              const width = ctx.measureText(text).width;
+              widthSignature.push(font + ':' + baseFamily + ':' + width.toFixed(2));
+              if (Math.abs(width - baseWidths[baseFamily]) > 0.1) matched = true;
+            }
+            if (matched) detected.push(font);
+          }
+
+          const signaturePayload = widthSignature.join('|');
+          const fontHash = await hashString(signaturePayload);
+          const concise = detected.join(',') || 'none';
+          setText('fp-fonts', truncateValue(concise + ' #' + (fontHash || 'na'), 110));
+          setRaw('fp-raw-fonts', {
+            detected,
+            hash: fontHash,
+            signature: widthSignature
+          });
+        }
+      } catch (e) {
+        console.error('Fonts collector error:', e);
+        setText('fp-fonts', 'Error');
+      }
+
+      // Media Capability Fingerprint
+      try {
+        const mediaDevices = navigator.mediaDevices;
+        if (!mediaDevices?.enumerateDevices) {
+          setText('fp-media-cap', 'Unavailable');
+        } else {
+          const payload = {
+            enumerateDevices: true,
+            permission: 'unknown',
+            devices: [],
+            constraints: mediaDevices.getSupportedConstraints ? mediaDevices.getSupportedConstraints() : {}
+          };
+
+          if (navigator.permissions?.query) {
+            const cameraPermission = await navigator.permissions.query({ name: 'camera' });
+            payload.permission = cameraPermission.state;
+          }
+
+          if (payload.permission === 'granted') {
+            try {
+              const devices = await withTimeout(mediaDevices.enumerateDevices(), 2500);
+              payload.devices = devices.map((device) => ({ kind: device.kind, label: device.label || '(hidden)' }));
+            } catch (_e) {
+              payload.devices = [{ kind: 'unknown', label: 'enumerateDevices timeout/error' }];
+            }
+          }
+
+          const constraintKeys = Object.keys(payload.constraints).filter((key) => payload.constraints[key]);
+          const summary = payload.permission === 'granted'
+            ? 'enum:on | perm:granted | devices:' + payload.devices.length
+            : 'enum:on | perm:' + payload.permission + ' | constraints:' + constraintKeys.slice(0, 6).join(',');
+
+          setText('fp-media-cap', truncateValue(summary, 110));
+          setRaw('fp-raw-media-cap', payload);
+        }
+      } catch (e) {
+        console.error('Media capability collector error:', e);
+        setText('fp-media-cap', 'Error');
+      }
+
       // Canvas Fingerprint
       try {
         const canvas = document.createElement('canvas');
@@ -476,6 +629,10 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">Hardware</th><td id="fp-cores" class="py-2 px-4 text-gray-800 dark:text-gray-200">...</td></tr>
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">Memory</th><td id="fp-memory" class="py-2 px-4 text-gray-800 dark:text-gray-200">...</td></tr>
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">Touch</th><td id="fp-touch" class="py-2 px-4 text-gray-800 dark:text-gray-200">...</td></tr>
+                <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">UA-CH</th><td id="fp-uach" class="py-2 px-4 text-gray-800 dark:text-gray-200 font-mono text-xs break-all">...</td></tr>
+                <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">AudioContext</th><td id="fp-audio" class="py-2 px-4 text-gray-800 dark:text-gray-200 font-mono text-xs break-all">...</td></tr>
+                <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">Fonts</th><td id="fp-fonts" class="py-2 px-4 text-gray-800 dark:text-gray-200 font-mono text-xs break-all">...</td></tr>
+                <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">Media Capability</th><td id="fp-media-cap" class="py-2 px-4 text-gray-800 dark:text-gray-200 font-mono text-xs break-all">...</td></tr>
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">Canvas Hash</th><td id="fp-canvas" class="py-2 px-4 text-gray-800 dark:text-gray-200 font-mono text-xs">...</td></tr>
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">WebGL</th><td id="fp-webgl" class="py-2 px-4 text-gray-800 dark:text-gray-200 text-xs">...</td></tr>
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">FingerprintJS</th><td id="fp-fingerprintjs" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
@@ -500,6 +657,42 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
                         <span>▶</span> Show Raw ThumbmarkJS Data
                     </summary>
                     <pre id="fp-raw-thumbmark" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
+                </details>
+            </div>
+
+            <div id="fp-raw-uach-container" class="hidden border-t border-gray-200 dark:border-gray-800">
+                <details class="group">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                        <span>▶</span> Show Raw UA-CH Data
+                    </summary>
+                    <pre id="fp-raw-uach" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
+                </details>
+            </div>
+
+            <div id="fp-raw-audio-container" class="hidden border-t border-gray-200 dark:border-gray-800">
+                <details class="group">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                        <span>▶</span> Show Raw AudioContext Data
+                    </summary>
+                    <pre id="fp-raw-audio" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
+                </details>
+            </div>
+
+            <div id="fp-raw-fonts-container" class="hidden border-t border-gray-200 dark:border-gray-800">
+                <details class="group">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                        <span>▶</span> Show Raw Fonts Data
+                    </summary>
+                    <pre id="fp-raw-fonts" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
+                </details>
+            </div>
+
+            <div id="fp-raw-media-cap-container" class="hidden border-t border-gray-200 dark:border-gray-800">
+                <details class="group">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                        <span>▶</span> Show Raw Media Capability Data
+                    </summary>
+                    <pre id="fp-raw-media-cap" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
                 </details>
             </div>
           </div>
