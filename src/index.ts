@@ -10,7 +10,8 @@ const app = new Hono()
 app.get('/assets/style.css', (c) => {
   return c.text(css, 200, {
     'Content-Type': 'text/css',
-    'Cache-Control': 'public, max-age=31536000, immutable'
+    // Cache for 1 day, allowing revalidation
+    'Cache-Control': 'public, max-age=86400'
   })
 })
 
