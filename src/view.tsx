@@ -302,13 +302,64 @@ const SCRIPT_CONTENT = `
         {
           id: 'fp-clientjs',
           name: 'ClientJS',
+          rawId: 'fp-raw-clientjs',
           loadAndCollect: async () => {
             await import('https://cdn.jsdelivr.net/npm/clientjs@0.2.1/dist/client.min.js');
             if (!window.ClientJS) return null;
             const client = new window.ClientJS();
-            const fingerprint = client.getFingerprint();
-            const signature = [client.getBrowser(), client.getOS(), client.getDevice()].join(' | ');
-            return { value: signature + ' #' + fingerprint };
+            const raw = {
+              browser: client.getBrowser(),
+              browserVersion: client.getBrowserVersion(),
+              browserMajorVersion: client.getBrowserMajorVersion(),
+              engine: client.getEngine(),
+              engineVersion: client.getEngineVersion(),
+              os: client.getOS(),
+              osVersion: client.getOSVersion(),
+              device: client.getDevice(),
+              deviceType: client.getDeviceType(),
+              cpu: client.getCPU(),
+              currentResolution: client.getCurrentResolution(),
+              availableResolution: client.getAvailableResolution(),
+              timezone: client.getTimeZone(),
+              language: client.getLanguage(),
+              platform: client.getPlatform(),
+              vendor: client.getVendor(),
+              fingerprint: client.getFingerprint()
+            };
+            const signature = [raw.browser, raw.os, raw.device].join(' | ');
+            return { value: signature + ' #' + raw.fingerprint, raw };
+          }
+        },
+        {
+          id: 'fp-fingerprintx',
+          name: 'FingerprintX',
+          rawId: 'fp-raw-fingerprintx',
+          loadAndCollect: async () => {
+            try {
+              await import('https://cdn.jsdelivr.net/npm/fingerprintx@0.1.4/dist/fingerprintx.min.js');
+            } catch {
+              await import('https://unpkg.com/fingerprintx@0.1.4/dist/fingerprintx.min.js');
+            }
+
+            const fpAny = window.FingerprintX || window.fingerprintx || window.FPX;
+            if (!fpAny) return null;
+
+            if (typeof fpAny.load === 'function') {
+              const agent = await fpAny.load();
+              const result = typeof agent?.get === 'function'
+                ? await agent.get()
+                : (typeof agent?.collect === 'function' ? await agent.collect() : null);
+              const value = result?.visitorId || result?.fingerprint || result?.hash;
+              return value ? { value: String(value), raw: result } : null;
+            }
+
+            if (typeof fpAny.get === 'function') {
+              const result = await fpAny.get();
+              const value = result?.visitorId || result?.fingerprint || result?.hash || result;
+              return value ? { value: String(value), raw: result } : null;
+            }
+
+            return null;
           }
         },
         {
@@ -638,6 +689,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">FingerprintJS</th><td id="fp-fingerprintjs" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">ThumbmarkJS</th><td id="fp-thumbmarkjs" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">ClientJS</th><td id="fp-clientjs" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
+                <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">FingerprintX</th><td id="fp-fingerprintx" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">Audio Signal Hash</th><td id="fp-audiohash" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
               </tbody>
             </table>
@@ -657,6 +709,24 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
                         <span>▶</span> Show Raw ThumbmarkJS Data
                     </summary>
                     <pre id="fp-raw-thumbmark" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
+                </details>
+            </div>
+
+            <div id="fp-raw-clientjs-container" class="hidden border-t border-gray-200 dark:border-gray-800">
+                <details class="group">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                        <span>▶</span> Show Raw ClientJS Data
+                    </summary>
+                    <pre id="fp-raw-clientjs" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
+                </details>
+            </div>
+
+            <div id="fp-raw-fingerprintx-container" class="hidden border-t border-gray-200 dark:border-gray-800">
+                <details class="group">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                        <span>▶</span> Show Raw FingerprintX Data
+                    </summary>
+                    <pre id="fp-raw-fingerprintx" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
                 </details>
             </div>
 

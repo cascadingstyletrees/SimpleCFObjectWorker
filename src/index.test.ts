@@ -24,6 +24,7 @@ describe('Worker', () => {
       'fp-fingerprintjs',
       'fp-thumbmarkjs',
       'fp-clientjs',
+      'fp-fingerprintx',
       'fp-audiohash'
     ]
     for (const id of fingerprintCellIds) {
@@ -41,6 +42,7 @@ describe('Worker', () => {
       { label: 'FingerprintJS', id: 'fp-fingerprintjs' },
       { label: 'ThumbmarkJS', id: 'fp-thumbmarkjs' },
       { label: 'ClientJS', id: 'fp-clientjs' },
+      { label: 'FingerprintX', id: 'fp-fingerprintx' },
       { label: 'Audio Signal Hash', id: 'fp-audiohash' }
     ]
     const escapeRegExp = (value: string) => value.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')
@@ -53,6 +55,8 @@ describe('Worker', () => {
     const rawContainerIds = [
       'fp-raw-fpjs-container',
       'fp-raw-thumbmark-container',
+      'fp-raw-clientjs-container',
+      'fp-raw-fingerprintx-container',
       'fp-raw-uach-container',
       'fp-raw-audio-container',
       'fp-raw-fonts-container',
