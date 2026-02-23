@@ -30,21 +30,23 @@ describe('Worker', () => {
       expect(text).toContain(`id="${id}"`)
     }
 
-    // Verify provider labels remain visible to users
-    const providerLabels = [
-      'UA-CH',
-      'AudioContext',
-      'Fonts',
-      'Media Capability',
-      'Canvas Hash',
-      'WebGL',
-      'FingerprintJS',
-      'ThumbmarkJS',
-      'ClientJS',
-      'Audio Signal Hash'
+    // Verify provider labels remain visible in fingerprint table header cells
+    const providerRows = [
+      { label: 'UA-CH', id: 'fp-uach' },
+      { label: 'AudioContext', id: 'fp-audio' },
+      { label: 'Fonts', id: 'fp-fonts' },
+      { label: 'Media Capability', id: 'fp-media-cap' },
+      { label: 'Canvas Hash', id: 'fp-canvas' },
+      { label: 'WebGL', id: 'fp-webgl' },
+      { label: 'FingerprintJS', id: 'fp-fingerprintjs' },
+      { label: 'ThumbmarkJS', id: 'fp-thumbmarkjs' },
+      { label: 'ClientJS', id: 'fp-clientjs' },
+      { label: 'Audio Signal Hash', id: 'fp-audiohash' }
     ]
-    for (const label of providerLabels) {
-      expect(text).toContain(label)
+    const escapeRegExp = (value: string) => value.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')
+    for (const { label, id } of providerRows) {
+      const escaped = escapeRegExp(label)
+      expect(text).toMatch(new RegExp(`<th[^>]*>${escaped}</th><td id=\"${id}\"`, 's'))
     }
 
     // Verify raw JSON containers exist for providers that expose details
