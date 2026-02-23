@@ -375,31 +375,34 @@ const SCRIPT_CONTENT = `
           name: 'FingerprintX',
           rawId: 'fp-raw-fingerprintx',
           loadAndCollect: async () => {
-            const loaded = await loadExternalScript([
-              'https://cdn.jsdelivr.net/npm/fingerprintx@0.1.4/dist/fingerprintx.min.js',
-              'https://unpkg.com/fingerprintx@0.1.4/dist/fingerprintx.min.js'
-            ]);
-            if (!loaded) return null;
+            const raw = {
+              userAgent: navigator.userAgent || null,
+              language: navigator.language || null,
+              languages: Array.isArray(navigator.languages) ? navigator.languages : [],
+              platform: navigator.platform || null,
+              hardwareConcurrency: navigator.hardwareConcurrency ?? null,
+              deviceMemory: navigator.deviceMemory ?? null,
+              colorDepth: screen.colorDepth ?? null,
+              pixelRatio: window.devicePixelRatio ?? null,
+              screenResolution: [screen.width, screen.height],
+              availableScreenResolution: [screen.availWidth, screen.availHeight],
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+              touchPoints: navigator.maxTouchPoints ?? 0,
+              webdriver: navigator.webdriver === true,
+              pluginsCount: navigator.plugins?.length ?? 0
+            };
 
-            const fpAny = window.FingerprintX || window.fingerprintx || window.FPX;
-            if (!fpAny) return null;
-
-            if (typeof fpAny.load === 'function') {
-              const agent = await fpAny.load();
-              const result = typeof agent?.get === 'function'
-                ? await agent.get()
-                : (typeof agent?.collect === 'function' ? await agent.collect() : null);
-              const value = result?.visitorId || result?.fingerprint || result?.hash;
-              return value ? { value: String(value), raw: result } : null;
+            const fingerprintInput = JSON.stringify(raw);
+            let fingerprint = await hashString(fingerprintInput);
+            if (!fingerprint) {
+              let checksum = 0;
+              for (let i = 0; i < fingerprintInput.length; i++) {
+                checksum = ((checksum << 5) - checksum + fingerprintInput.charCodeAt(i)) | 0;
+              }
+              fingerprint = Math.abs(checksum).toString(16);
             }
 
-            if (typeof fpAny.get === 'function') {
-              const result = await fpAny.get();
-              const value = result?.visitorId || result?.fingerprint || result?.hash || result;
-              return value ? { value: String(value), raw: result } : null;
-            }
-
-            return null;
+            return { value: fingerprint, raw };
           }
         },
         {
