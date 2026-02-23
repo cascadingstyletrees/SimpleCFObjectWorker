@@ -228,6 +228,16 @@ const SCRIPT_CONTENT = `
 
     // Fingerprinting Logic ... (Same as before)
     (async () => {
+      const loadScript = (url) => {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+      };
+
       // Load FingerprintJS
       try {
         const fpPromise = import('https://openfpcdn.io/fingerprintjs/v4')
@@ -321,6 +331,84 @@ const SCRIPT_CONTENT = `
       } catch (e) {
         document.getElementById('fp-webgl').textContent = 'Error';
       }
+
+      // Audio Fingerprint
+      try {
+        const AudioContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        if (!AudioContext) {
+           document.getElementById('fp-audio').textContent = 'Not Supported';
+        } else {
+            const audioCtx = new AudioContext(1, 44100, 44100);
+            const osc = audioCtx.createOscillator();
+            osc.type = 'triangle';
+            osc.frequency.value = 10000;
+            const compressor = audioCtx.createDynamicsCompressor();
+            compressor.threshold.value = -50;
+            compressor.knee.value = 40;
+            compressor.ratio.value = 12;
+            compressor.reduction.value = -20;
+            compressor.attack.value = 0;
+            compressor.release.value = 0.25;
+            osc.connect(compressor);
+            compressor.connect(audioCtx.destination);
+            osc.start(0);
+
+            // Render
+            audioCtx.startRendering().then(buffer => {
+                let hash = 0;
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < data.length; i++) {
+                    hash += Math.abs(data[i]);
+                }
+                document.getElementById('fp-audio').textContent = hash.toString();
+            }).catch(e => {
+                console.error('Audio FP Error:', e);
+                document.getElementById('fp-audio').textContent = 'Error';
+            });
+        }
+      } catch (e) {
+        document.getElementById('fp-audio').textContent = 'Error';
+      }
+
+      // ClientJS
+      try {
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/ClientJS/0.2.1/client.min.js');
+        if (window.ClientJS) {
+            const client = new window.ClientJS();
+            const fp = client.getFingerprint();
+            document.getElementById('fp-clientjs').textContent = fp;
+
+            // Raw Data
+            const rawData = {
+                browser: client.getBrowser(),
+                os: client.getOS(),
+                device: client.getDevice(),
+                cpu: client.getCPU(),
+                resolution: client.getCurrentResolution(),
+                fingerprint: fp
+            };
+             document.getElementById('fp-raw-clientjs').textContent = JSON.stringify(rawData, null, 2);
+             document.getElementById('fp-raw-clientjs-container').classList.remove('hidden');
+        }
+      } catch(e) {
+        console.error('ClientJS error:', e);
+        document.getElementById('fp-clientjs').textContent = 'Error';
+      }
+
+      // FingerprintX
+      try {
+         await loadScript('https://cdn.jsdelivr.net/npm/@ipriskify/fingerprintx/dist/ipriskify.umd.js');
+         if (window.IPRiskify) {
+             const fpx = await window.IPRiskify.load();
+             const result = await fpx.get();
+             document.getElementById('fp-fingerprintx').textContent = result.analysis?.fingerprint || result.visitorId || 'Unknown';
+             document.getElementById('fp-raw-fingerprintx').textContent = JSON.stringify(result, null, 2);
+             document.getElementById('fp-raw-fingerprintx-container').classList.remove('hidden');
+         }
+      } catch (e) {
+        console.error('FingerprintX error:', e);
+        document.getElementById('fp-fingerprintx').textContent = 'Error';
+      }
     })();
   `
 
@@ -394,6 +482,9 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">WebGL</th><td id="fp-webgl" class="py-2 px-4 text-gray-800 dark:text-gray-200 text-xs">...</td></tr>
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">FingerprintJS</th><td id="fp-fingerprintjs" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">ThumbmarkJS</th><td id="fp-thumbmarkjs" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
+                <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">Audio Hash</th><td id="fp-audio" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
+                <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">ClientJS</th><td id="fp-clientjs" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
+                <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">FingerprintX</th><td id="fp-fingerprintx" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
               </tbody>
             </table>
 
@@ -412,6 +503,24 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
                         <span>▶</span> Show Raw ThumbmarkJS Data
                     </summary>
                     <pre id="fp-raw-thumbmark" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
+                </details>
+            </div>
+
+            <div id="fp-raw-clientjs-container" class="hidden border-t border-gray-200 dark:border-gray-800">
+                <details class="group">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                        <span>▶</span> Show Raw ClientJS Data
+                    </summary>
+                    <pre id="fp-raw-clientjs" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
+                </details>
+            </div>
+
+            <div id="fp-raw-fingerprintx-container" class="hidden border-t border-gray-200 dark:border-gray-800">
+                <details class="group">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                        <span>▶</span> Show Raw FingerprintX Data
+                    </summary>
+                    <pre id="fp-raw-fingerprintx" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
                 </details>
             </div>
           </div>
