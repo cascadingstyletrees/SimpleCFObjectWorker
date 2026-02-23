@@ -226,45 +226,131 @@ const SCRIPT_CONTENT = `
       }
     });
 
-    // Fingerprinting Logic ... (Same as before)
+    // Fingerprinting Logic
     (async () => {
-      // Load FingerprintJS
-      try {
-        const fpPromise = import('https://openfpcdn.io/fingerprintjs/v4')
-          .then(FingerprintJS => FingerprintJS.load());
-        const fp = await fpPromise;
-        const result = await fp.get();
-        document.getElementById('fp-fingerprintjs').textContent = result.visitorId;
+      const DEFAULT_TIMEOUT_MS = 6000;
+      const textEncoder = new TextEncoder();
 
-        // Show raw data if available
-        if (result) {
-            document.getElementById('fp-raw-fpjs').textContent = JSON.stringify(result, null, 2);
-            document.getElementById('fp-raw-fpjs-container').classList.remove('hidden');
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+
+      const setRaw = (id, payload) => {
+        if (!id || payload === undefined) return;
+        const rawEl = document.getElementById(id);
+        const containerEl = document.getElementById(id + '-container');
+        if (!rawEl || !containerEl) return;
+        rawEl.textContent = JSON.stringify(payload, null, 2);
+        containerEl.classList.remove('hidden');
+      };
+
+      const withTimeout = async (promise, timeoutMs = DEFAULT_TIMEOUT_MS) => {
+        let timeoutId;
+        try {
+          return await Promise.race([
+            promise,
+            new Promise((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error('Timed out')), timeoutMs);
+            })
+          ]);
+        } finally {
+          clearTimeout(timeoutId);
         }
+      };
 
-      } catch (e) {
-        console.error('FingerprintJS error:', e);
-        document.getElementById('fp-fingerprintjs').textContent = 'Error';
-      }
+      const hashString = async (input) => {
+        if (!window.crypto?.subtle) return null;
+        const digest = await crypto.subtle.digest('SHA-256', textEncoder.encode(input));
+        return Array.from(new Uint8Array(digest))
+          .map((byte) => byte.toString(16).padStart(2, '0'))
+          .join('')
+          .slice(0, 24);
+      };
 
-      // Load ThumbmarkJS
-      try {
-        await import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js');
-        if (window.ThumbmarkJS) {
-          const tm = new window.ThumbmarkJS.Thumbmark();
-          const result = await tm.get();
-          document.getElementById('fp-thumbmarkjs').textContent = result.thumbmark || result;
-
-          // Show raw data
-          document.getElementById('fp-raw-thumbmark').textContent = JSON.stringify(result, null, 2);
-          document.getElementById('fp-raw-thumbmark-container').classList.remove('hidden');
-
-        } else {
-          document.getElementById('fp-thumbmarkjs').textContent = 'Failed to load';
+      // Provider registry shape:
+      // { id: string, name: string, rawId?: string, loadAndCollect: () => Promise<{ value: string, raw?: unknown } | null> }
+      const providers = [
+        {
+          id: 'fp-fingerprintjs',
+          name: 'FingerprintJS',
+          rawId: 'fp-raw-fpjs',
+          loadAndCollect: async () => {
+            const fp = await import('https://openfpcdn.io/fingerprintjs/v4').then((FingerprintJS) => FingerprintJS.load());
+            const result = await fp.get();
+            return { value: result.visitorId, raw: result };
+          }
+        },
+        {
+          id: 'fp-thumbmarkjs',
+          name: 'ThumbmarkJS',
+          rawId: 'fp-raw-thumbmark',
+          loadAndCollect: async () => {
+            await import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js');
+            if (!window.ThumbmarkJS) return null;
+            const tm = new window.ThumbmarkJS.Thumbmark();
+            const result = await tm.get();
+            return { value: String(result.thumbmark || result), raw: result };
+          }
+        },
+        {
+          id: 'fp-clientjs',
+          name: 'ClientJS',
+          loadAndCollect: async () => {
+            await import('https://cdn.jsdelivr.net/npm/clientjs@0.2.1/dist/client.min.js');
+            if (!window.ClientJS) return null;
+            const client = new window.ClientJS();
+            const fingerprint = client.getFingerprint();
+            const signature = [client.getBrowser(), client.getOS(), client.getDevice()].join(' | ');
+            return { value: signature + ' #' + fingerprint };
+          }
+        },
+        {
+          id: 'fp-audiohash',
+          name: 'Audio Signal Hash',
+          loadAndCollect: async () => {
+            const AudioContextCtor = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+            if (!AudioContextCtor) return null;
+            const context = new AudioContextCtor(1, 5000, 44100);
+            const oscillator = context.createOscillator();
+            const compressor = context.createDynamicsCompressor();
+            oscillator.type = 'triangle';
+            oscillator.frequency.value = 10000;
+            compressor.threshold.value = -50;
+            compressor.knee.value = 40;
+            compressor.ratio.value = 12;
+            compressor.attack.value = 0;
+            compressor.release.value = 0.25;
+            oscillator.connect(compressor);
+            compressor.connect(context.destination);
+            oscillator.start(0);
+            const buffer = await context.startRendering();
+            const data = buffer.getChannelData(0);
+            const slice = Array.from(data.slice(4500, 5000)).map((num) => num.toFixed(6)).join(',');
+            const hash = await hashString(slice);
+            return { value: hash || 'Unavailable' };
+          }
         }
-      } catch (e) {
-        console.error('ThumbmarkJS error:', e);
-        document.getElementById('fp-thumbmarkjs').textContent = 'Error';
+      ];
+
+      for (const provider of providers) {
+        setText(provider.id, 'Loading...');
+        try {
+          const result = await withTimeout(provider.loadAndCollect());
+          if (!result || !result.value) {
+            setText(provider.id, 'Unavailable');
+            continue;
+          }
+          setText(provider.id, String(result.value));
+          setRaw(provider.rawId, result.raw);
+        } catch (e) {
+          if (e instanceof Error && e.message === 'Timed out') {
+            setText(provider.id, 'Timed out');
+          } else {
+            console.error(provider.name + ' error:', e);
+            setText(provider.id, 'Error');
+          }
+        }
       }
 
       // Basic Info
@@ -394,6 +480,8 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">WebGL</th><td id="fp-webgl" class="py-2 px-4 text-gray-800 dark:text-gray-200 text-xs">...</td></tr>
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">FingerprintJS</th><td id="fp-fingerprintjs" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
                 <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">ThumbmarkJS</th><td id="fp-thumbmarkjs" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
+                <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">ClientJS</th><td id="fp-clientjs" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
+                <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"><th class="py-2 px-4 text-gray-500 dark:text-gray-400 font-medium">Audio Signal Hash</th><td id="fp-audiohash" class="py-2 px-4 text-orange-500 dark:text-orange-400 font-mono text-xs break-all">Loading...</td></tr>
               </tbody>
             </table>
 
