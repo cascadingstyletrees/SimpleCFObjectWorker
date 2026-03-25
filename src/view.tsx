@@ -202,10 +202,14 @@ const SCRIPT_CONTENT = `
               content.classList.remove('hidden');
               btn.querySelector('.icon-min').classList.remove('hidden');
               btn.querySelector('.icon-max').classList.add('hidden');
+              btn.setAttribute('aria-label', 'Minimize card');
+              btn.setAttribute('title', 'Minimize card');
             } else {
               content.classList.add('hidden');
               btn.querySelector('.icon-min').classList.add('hidden');
               btn.querySelector('.icon-max').classList.remove('hidden');
+              btn.setAttribute('aria-label', 'Expand card');
+              btn.setAttribute('title', 'Expand card');
             }
 
             grid.refreshItems().layout();
