@@ -293,12 +293,24 @@ const SCRIPT_CONTENT = `
       };
 
       const hashString = async (input) => {
-        if (!window.crypto?.subtle) return null;
-        const digest = await crypto.subtle.digest('SHA-256', textEncoder.encode(input));
-        return Array.from(new Uint8Array(digest))
-          .map((byte) => byte.toString(16).padStart(2, '0'))
-          .join('')
-          .slice(0, 24);
+        if (window.crypto?.subtle) {
+          try {
+            const digest = await crypto.subtle.digest('SHA-256', textEncoder.encode(input));
+            return Array.from(new Uint8Array(digest))
+              .map((byte) => byte.toString(16).padStart(2, '0'))
+              .join('')
+              .slice(0, 24);
+          } catch (e) {
+            console.error('WebCrypto error, falling back:', e);
+          }
+        }
+
+        // Synchronous fallback (DjB2) - using charCodeAt to avoid TextEncoder allocation overhead
+        let hash = 0;
+        for (let i = 0; i < input.length; i++) {
+          hash = ((hash << 5) - hash + input.charCodeAt(i)) | 0;
+        }
+        return Math.abs(hash).toString(16);
       };
 
       // Provider registry shape:
@@ -393,15 +405,7 @@ const SCRIPT_CONTENT = `
             };
 
             const fingerprintInput = JSON.stringify(raw);
-            let fingerprint = await hashString(fingerprintInput);
-            if (!fingerprint) {
-              let checksum = 0;
-              for (let i = 0; i < fingerprintInput.length; i++) {
-                checksum = ((checksum << 5) - checksum + fingerprintInput.charCodeAt(i)) | 0;
-              }
-              fingerprint = Math.abs(checksum).toString(16);
-            }
-
+            const fingerprint = await hashString(fingerprintInput);
             return { value: fingerprint, raw };
           }
         },
@@ -626,15 +630,10 @@ const SCRIPT_CONTENT = `
         ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
         ctx.fillText("Hello World", 4, 17);
 
-        // Simple hash of the data URL
+        // Hash of the data URL using the unified hashString
         const dataUrl = canvas.toDataURL();
-        let hash = 0;
-        for (let i = 0; i < dataUrl.length; i++) {
-          const char = dataUrl.charCodeAt(i);
-          hash = ((hash << 5) - hash) + char;
-          hash = hash & hash;
-        }
-        document.getElementById('fp-canvas').textContent = hash.toString(16);
+        const hash = await hashString(dataUrl);
+        document.getElementById('fp-canvas').textContent = hash || 'Error';
       } catch (e) {
         document.getElementById('fp-canvas').textContent = 'Error';
       }
