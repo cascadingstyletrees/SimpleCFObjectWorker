@@ -80,7 +80,7 @@ const Card = ({ title, icon, description, children, className = "" }: { title: s
               </h2>
               {description && <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{description}</p>}
            </div>
-           <button class="minimize-btn text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 ml-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+           <button aria-label="Minimize card" title="Minimize card" class="minimize-btn text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 ml-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
              <span class="icon-min">{Icons.ChevronUp}</span>
              <span class="icon-max hidden">{Icons.ChevronDown}</span>
            </button>
@@ -192,6 +192,11 @@ const SCRIPT_CONTENT = `
 
         // Minimize Logic
         document.querySelectorAll('.minimize-btn').forEach(btn => {
+          // Prevent drag from initiating when interacting with the button
+          ['mousedown', 'touchstart', 'pointerdown'].forEach(evt => {
+            btn.addEventListener(evt, e => e.stopPropagation());
+          });
+
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const widget = btn.closest('.item');
@@ -202,10 +207,14 @@ const SCRIPT_CONTENT = `
               content.classList.remove('hidden');
               btn.querySelector('.icon-min').classList.remove('hidden');
               btn.querySelector('.icon-max').classList.add('hidden');
+              btn.setAttribute('aria-label', 'Minimize card');
+              btn.setAttribute('title', 'Minimize card');
             } else {
               content.classList.add('hidden');
               btn.querySelector('.icon-min').classList.add('hidden');
               btn.querySelector('.icon-max').classList.remove('hidden');
+              btn.setAttribute('aria-label', 'Expand card');
+              btn.setAttribute('title', 'Expand card');
             }
 
             grid.refreshItems().layout();
@@ -682,7 +691,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
           <h1 class="text-2xl md:text-3xl font-bold text-orange-500 mb-2">Request Inspector</h1>
           <p class="text-gray-500 dark:text-gray-400">Real-time analysis of your connection and browser environment.</p>
         </div>
-        <button id="theme-toggle" class="p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm">
+        <button id="theme-toggle" aria-label="Toggle theme" title="Toggle theme" class="p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
           {/* Sun (Light) */}
           <svg id="icon-sun" class="hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
           {/* Moon (Dark) */}
@@ -751,7 +760,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-fpjs-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
                         <span>▶</span> Show Raw FingerprintJS Data
                     </summary>
                     <pre id="fp-raw-fpjs" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
@@ -760,7 +769,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-thumbmark-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
                         <span>▶</span> Show Raw ThumbmarkJS Data
                     </summary>
                     <pre id="fp-raw-thumbmark" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
@@ -769,7 +778,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-clientjs-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
                         <span>▶</span> Show Raw ClientJS Data
                     </summary>
                     <pre id="fp-raw-clientjs" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
@@ -778,7 +787,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-fingerprintx-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
                         <span>▶</span> Show Raw FingerprintX Data
                     </summary>
                     <pre id="fp-raw-fingerprintx" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
@@ -787,7 +796,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-uach-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
                         <span>▶</span> Show Raw UA-CH Data
                     </summary>
                     <pre id="fp-raw-uach" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
@@ -796,7 +805,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-audio-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
                         <span>▶</span> Show Raw AudioContext Data
                     </summary>
                     <pre id="fp-raw-audio" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
@@ -805,7 +814,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-fonts-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
                         <span>▶</span> Show Raw Fonts Data
                     </summary>
                     <pre id="fp-raw-fonts" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
@@ -814,7 +823,7 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-media-cap-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
                         <span>▶</span> Show Raw Media Capability Data
                     </summary>
                     <pre id="fp-raw-media-cap" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
