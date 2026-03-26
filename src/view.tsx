@@ -238,7 +238,19 @@ const SCRIPT_CONTENT = `
     // Fingerprinting Logic
     (async () => {
       const DEFAULT_TIMEOUT_MS = 6000;
-      const textEncoder = new TextEncoder();
+      const encodeToBytes = (value) => {
+        if (typeof TextEncoder !== 'undefined') {
+          return new TextEncoder().encode(value);
+        }
+
+        // Fallback for older Safari/webviews where TextEncoder may be missing.
+        const utf8 = unescape(encodeURIComponent(value));
+        const bytes = new Uint8Array(utf8.length);
+        for (let i = 0; i < utf8.length; i++) {
+          bytes[i] = utf8.charCodeAt(i);
+        }
+        return bytes;
+      };
 
       const setText = (id, value) => {
         const el = document.getElementById(id);
@@ -303,7 +315,7 @@ const SCRIPT_CONTENT = `
 
       const hashString = async (input) => {
         if (!window.crypto?.subtle) return null;
-        const digest = await crypto.subtle.digest('SHA-256', textEncoder.encode(input));
+        const digest = await crypto.subtle.digest('SHA-256', encodeToBytes(input));
         return Array.from(new Uint8Array(digest))
           .map((byte) => byte.toString(16).padStart(2, '0'))
           .join('')
