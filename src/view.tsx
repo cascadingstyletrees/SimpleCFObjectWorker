@@ -192,6 +192,11 @@ const SCRIPT_CONTENT = `
 
         // Minimize Logic
         document.querySelectorAll('.minimize-btn').forEach(btn => {
+          // Prevent drag from initiating when interacting with the button
+          ['mousedown', 'touchstart', 'pointerdown'].forEach(evt => {
+            btn.addEventListener(evt, e => e.stopPropagation());
+          });
+
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const widget = btn.closest('.item');
