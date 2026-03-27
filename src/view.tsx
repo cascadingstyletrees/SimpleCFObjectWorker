@@ -80,7 +80,11 @@ const Card = ({ title, icon, description, children, className = "" }: { title: s
               </h2>
               {description && <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{description}</p>}
            </div>
-           <button class="minimize-btn text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 ml-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+           <button
+             class="minimize-btn text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 ml-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+             aria-label={`Minimize ${title} card`}
+             title={`Minimize ${title} card`}
+           >
              <span class="icon-min">{Icons.ChevronUp}</span>
              <span class="icon-max hidden">{Icons.ChevronDown}</span>
            </button>
@@ -139,10 +143,25 @@ const SCRIPT_CONTENT = `
         // Update Icons
         Object.values(icons).forEach(el => el && el.classList.add('hidden'));
         if ('theme' in localStorage) {
-          if (localStorage.theme === 'dark') icons.dark.classList.remove('hidden');
-          else icons.light.classList.remove('hidden');
+          if (localStorage.theme === 'dark') {
+            icons.dark.classList.remove('hidden');
+            if (btn) {
+              btn.setAttribute('aria-label', 'Switch to system theme');
+              btn.setAttribute('title', 'Switch to system theme');
+            }
+          } else {
+            icons.light.classList.remove('hidden');
+            if (btn) {
+              btn.setAttribute('aria-label', 'Switch to dark theme');
+              btn.setAttribute('title', 'Switch to dark theme');
+            }
+          }
         } else {
           icons.system.classList.remove('hidden');
+          if (btn) {
+            btn.setAttribute('aria-label', 'Switch to light theme');
+            btn.setAttribute('title', 'Switch to light theme');
+          }
         }
       }
 
@@ -198,14 +217,21 @@ const SCRIPT_CONTENT = `
             const content = widget.querySelector('.widget-content');
             const isHidden = content.classList.contains('hidden');
 
+            const titleSpan = widget.querySelector('h2 span.truncate');
+            const cardTitle = titleSpan ? titleSpan.textContent : 'card';
+
             if (isHidden) {
               content.classList.remove('hidden');
               btn.querySelector('.icon-min').classList.remove('hidden');
               btn.querySelector('.icon-max').classList.add('hidden');
+              btn.setAttribute('aria-label', 'Minimize ' + cardTitle + ' card');
+              btn.setAttribute('title', 'Minimize ' + cardTitle + ' card');
             } else {
               content.classList.add('hidden');
               btn.querySelector('.icon-min').classList.add('hidden');
               btn.querySelector('.icon-max').classList.remove('hidden');
+              btn.setAttribute('aria-label', 'Expand ' + cardTitle + ' card');
+              btn.setAttribute('title', 'Expand ' + cardTitle + ' card');
             }
 
             grid.refreshItems().layout();
@@ -682,7 +708,12 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
           <h1 class="text-2xl md:text-3xl font-bold text-orange-500 mb-2">Request Inspector</h1>
           <p class="text-gray-500 dark:text-gray-400">Real-time analysis of your connection and browser environment.</p>
         </div>
-        <button id="theme-toggle" class="p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm">
+        <button
+          id="theme-toggle"
+          class="p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+          aria-label="Toggle theme"
+          title="Toggle theme"
+        >
           {/* Sun (Light) */}
           <svg id="icon-sun" class="hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
           {/* Moon (Dark) */}
