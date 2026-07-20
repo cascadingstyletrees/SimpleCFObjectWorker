@@ -782,8 +782,8 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-fpjs-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
-                        <span>▶</span> Show Raw FingerprintJS Data
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                        <span class="inline-block transition-transform group-open:rotate-90">▶</span> Show Raw FingerprintJS Data
                     </summary>
                     <pre id="fp-raw-fpjs" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
                 </details>
@@ -791,8 +791,8 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-thumbmark-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
-                        <span>▶</span> Show Raw ThumbmarkJS Data
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                        <span class="inline-block transition-transform group-open:rotate-90">▶</span> Show Raw ThumbmarkJS Data
                     </summary>
                     <pre id="fp-raw-thumbmark" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
                 </details>
@@ -800,8 +800,8 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-clientjs-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
-                        <span>▶</span> Show Raw ClientJS Data
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                        <span class="inline-block transition-transform group-open:rotate-90">▶</span> Show Raw ClientJS Data
                     </summary>
                     <pre id="fp-raw-clientjs" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
                 </details>
@@ -809,8 +809,8 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-fingerprintx-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
-                        <span>▶</span> Show Raw FingerprintX Data
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                        <span class="inline-block transition-transform group-open:rotate-90">▶</span> Show Raw FingerprintX Data
                     </summary>
                     <pre id="fp-raw-fingerprintx" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
                 </details>
@@ -818,8 +818,8 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-uach-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
-                        <span>▶</span> Show Raw UA-CH Data
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                        <span class="inline-block transition-transform group-open:rotate-90">▶</span> Show Raw UA-CH Data
                     </summary>
                     <pre id="fp-raw-uach" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
                 </details>
@@ -827,8 +827,8 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-audio-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
-                        <span>▶</span> Show Raw AudioContext Data
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                        <span class="inline-block transition-transform group-open:rotate-90">▶</span> Show Raw AudioContext Data
                     </summary>
                     <pre id="fp-raw-audio" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
                 </details>
@@ -836,8 +836,8 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-fonts-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
-                        <span>▶</span> Show Raw Fonts Data
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                        <span class="inline-block transition-transform group-open:rotate-90">▶</span> Show Raw Fonts Data
                     </summary>
                     <pre id="fp-raw-fonts" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
                 </details>
@@ -845,8 +845,8 @@ export const View = (props: { headers: Record<string, string>, cf: any }) => {
 
             <div id="fp-raw-media-cap-container" class="hidden border-t border-gray-200 dark:border-gray-800">
                 <details class="group">
-                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2">
-                        <span>▶</span> Show Raw Media Capability Data
+                    <summary class="p-3 text-xs text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 select-none font-mono flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                        <span class="inline-block transition-transform group-open:rotate-90">▶</span> Show Raw Media Capability Data
                     </summary>
                     <pre id="fp-raw-media-cap" class="p-3 bg-gray-50 dark:bg-black/30 text-[10px] text-green-600 dark:text-green-400 font-mono overflow-x-auto whitespace-pre-wrap"></pre>
                 </details>
