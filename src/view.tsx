@@ -471,13 +471,13 @@ const SCRIPT_CONTENT = `
         }
       ];
 
-      for (const provider of providers) {
+      await Promise.allSettled(providers.map(async (provider) => {
         setText(provider.id, 'Loading...');
         try {
           const result = await withTimeout(provider.loadAndCollect());
           if (!result || !result.value) {
             setText(provider.id, 'Unavailable');
-            continue;
+            return;
           }
           setText(provider.id, String(result.value));
           setRaw(provider.rawId, result.raw);
@@ -489,7 +489,7 @@ const SCRIPT_CONTENT = `
             setText(provider.id, 'Error');
           }
         }
-      }
+      }));
 
       // Basic Info
       document.getElementById('fp-screen').textContent = window.screen.width + 'x' + window.screen.height;
