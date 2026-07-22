@@ -1,9 +1,19 @@
 import { Hono } from 'hono'
 import { View } from './view'
+import { css } from './generated-css'
 
 const app = new Hono()
 
 // --- Utility Routes ---
+
+// Serve generated CSS
+app.get('/assets/style.css', (c) => {
+  return c.text(css, 200, {
+    'Content-Type': 'text/css',
+    // Cache for 1 day, allowing revalidation
+    'Cache-Control': 'public, max-age=86400'
+  })
+})
 
 // JSON Inspector: Returns full request details
 app.get('/json', (c) => {
