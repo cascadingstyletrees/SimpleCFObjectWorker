@@ -13,7 +13,6 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.12.7",
     "@cloudflare/workers-types": "^4.20230323.0",
-    "@tailwindcss/cli": "^4.2.0",
     "@types/node": "^20.12.12",
     "autoprefixer": "^10.4.24",
     "postcss": "^8.5.6",

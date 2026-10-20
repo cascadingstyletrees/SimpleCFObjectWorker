@@ -1,14 +1,23 @@
 export const flattenObject = (obj: any, prefix = '') => {
   const result: any = {};
-  const traverse = (current: any, p: string) => {
+  const stackObj = [obj];
+  const stackPrefix = [prefix];
+
+  while (stackObj.length > 0) {
+    const current = stackObj.pop();
+    const p = stackPrefix.pop();
+
     if (typeof current === 'object' && current !== null && !Array.isArray(current)) {
-      Object.keys(current).forEach(key => {
-        traverse(current[key], p ? `${p}.${key}` : key);
-      });
+      const keys = Object.keys(current);
+      for (let i = keys.length - 1; i >= 0; i--) {
+        const key = keys[i];
+        stackObj.push(current[key]);
+        stackPrefix.push(p ? `${p}.${key}` : key);
+      }
     } else {
-      result[p] = current;
+      result[p!] = current;
     }
-  };
-  traverse(obj, prefix);
+  }
+
   return result;
 };

@@ -31,5 +31,7 @@ describe('Performance Improvement', () => {
     // Verify it looks like CSS
     expect(cssText).toContain('.text-orange-500')
     expect(cssText).toContain('.bg-gray-100')
+    // The dashboard's dark background comes from tailwind.config.js.
+    expect(cssText).toMatch(/background-color:(?:#0[bB]0[fF]19|rgb\(11 15 25[)/])/)
   })
 })
