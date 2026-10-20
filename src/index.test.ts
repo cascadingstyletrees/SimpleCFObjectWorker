@@ -69,6 +69,11 @@ describe('Worker', () => {
     // Verify some mock data is rendered
     expect(text).toContain('Austin')
     expect(text).toContain('US')
+
+    // Ensure fingerprinting logic does not unconditionally instantiate TextEncoder,
+    // which can throw in older Safari/webview environments.
+    expect(text).not.toContain('const textEncoder = new TextEncoder();')
+    expect(text).toContain("if (typeof TextEncoder !== 'undefined')")
   })
 
   it('should return JSON details on /json', async () => {
