@@ -685,8 +685,11 @@ const Script = () => {
   return <script dangerouslySetInnerHTML={{ __html: SCRIPT_CONTENT }} />
 }
 
-export const View = (props: { headers: Record<string, string>, cf: any }) => {
+export const View = (props: { headers: Record<string, string>, cf: any, requestMethod?: string }) => {
   const flattenedCf = flattenObject(props.cf);
+  if (!props.cf?.requestMethod && props.requestMethod) {
+    flattenedCf.requestMethod = props.requestMethod;
+  }
   return (
     <Layout title="Cloudflare Request Inspector">
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-gray-200 dark:border-gray-800 pb-6 gap-4">

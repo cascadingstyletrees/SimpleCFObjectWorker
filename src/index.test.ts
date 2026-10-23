@@ -1,8 +1,35 @@
 import { describe, it, expect } from 'vitest'
 import worker from './index'
+import { View } from './view'
 import { createMockRequest, createMockContext, mockCf } from './test-utils'
 
 describe('Worker', () => {
+  it.each([undefined, null, '', false, 0])('renders the request method for falsy cf.requestMethod=%s without mutating cf', async (requestMethod) => {
+    const cf = Object.freeze({ country: 'US', requestMethod })
+    const text = await View({ headers: {}, cf, requestMethod: 'POST' }).toString()
+
+    expect(text).toMatch(/>requestMethod<\/th><td[^>]*>POST<\/td>/)
+    expect(cf.requestMethod).toBe(requestMethod)
+  })
+
+  it('preserves an existing cf request method', async () => {
+    const cf = Object.freeze({ country: 'US', requestMethod: 'PATCH' })
+    const text = await View({ headers: {}, cf, requestMethod: 'POST' }).toString()
+
+    expect(text).toMatch(/>requestMethod<\/th><td[^>]*>PATCH<\/td>/)
+    expect(cf.requestMethod).toBe('PATCH')
+  })
+
+  it('renders the route method without changing the request cf object', async () => {
+    const cf = Object.freeze({ country: 'US' })
+    const req = createMockRequest('http://example.com/', {}, cf)
+    const res = await worker.fetch(req, {}, createMockContext())
+
+    expect(await res.text()).toMatch(/>requestMethod<\/th><td[^>]*>GET<\/td>/)
+    expect(req.cf).toBe(cf)
+    expect(cf).toEqual({ country: 'US' })
+  })
+
   it('should return HTML dashboard on root', async () => {
     const req = createMockRequest('http://example.com/')
     const res = await worker.fetch(req, {}, createMockContext())
