@@ -1,33 +1,116 @@
 import { describe, it, expect } from 'vitest'
 import worker from './index'
+import { View } from './view'
+import { createMockRequest, createMockContext, mockCf } from './test-utils'
 
 describe('Worker', () => {
+  it.each([undefined, null, '', false, 0])('renders the request method for falsy cf.requestMethod=%s without mutating cf', async (requestMethod) => {
+    const cf = Object.freeze({ country: 'US', requestMethod })
+    const text = await View({ headers: {}, cf, requestMethod: 'POST' }).toString()
+
+    expect(text).toMatch(/>requestMethod<\/th><td[^>]*>POST<\/td>/)
+    expect(cf.requestMethod).toBe(requestMethod)
+  })
+
+  it('preserves an existing cf request method', async () => {
+    const cf = Object.freeze({ country: 'US', requestMethod: 'PATCH' })
+    const text = await View({ headers: {}, cf, requestMethod: 'POST' }).toString()
+
+    expect(text).toMatch(/>requestMethod<\/th><td[^>]*>PATCH<\/td>/)
+    expect(cf.requestMethod).toBe('PATCH')
+  })
+
+  it('renders the route method without changing the request cf object', async () => {
+    const cf = Object.freeze({ country: 'US' })
+    const req = createMockRequest('http://example.com/', {}, cf)
+    const res = await worker.fetch(req, {}, createMockContext())
+
+    expect(await res.text()).toMatch(/>requestMethod<\/th><td[^>]*>GET<\/td>/)
+    expect(req.cf).toBe(cf)
+    expect(cf).toEqual({ country: 'US' })
+  })
+
   it('should return HTML dashboard on root', async () => {
-    const req = new Request('http://example.com/')
-    const res = await worker.fetch(req, {}, {} as any)
+    const req = createMockRequest('http://example.com/')
+    const res = await worker.fetch(req, {}, createMockContext())
 
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toContain('text/html')
     const text = await res.text()
     expect(text).toContain('Request Inspector')
     expect(text).toContain('Client Fingerprint')
-    // Verify that requestMethod is present (added via View logic)
-    expect(text).toContain('requestMethod')
-    expect(text).toContain('GET')
+
+    // Verify fingerprint cells are rendered in SSR HTML
+    const fingerprintCellIds = [
+      'fp-uach',
+      'fp-audio',
+      'fp-fonts',
+      'fp-media-cap',
+      'fp-canvas',
+      'fp-webgl',
+      'fp-fingerprintjs',
+      'fp-thumbmarkjs',
+      'fp-clientjs',
+      'fp-fingerprintx',
+      'fp-audiohash'
+    ]
+    for (const id of fingerprintCellIds) {
+      expect(text).toContain(`id="${id}"`)
+    }
+
+    // Verify provider labels remain visible in fingerprint table header cells
+    const providerRows = [
+      { label: 'UA-CH', id: 'fp-uach' },
+      { label: 'AudioContext', id: 'fp-audio' },
+      { label: 'Fonts', id: 'fp-fonts' },
+      { label: 'Media Capability', id: 'fp-media-cap' },
+      { label: 'Canvas Hash', id: 'fp-canvas' },
+      { label: 'WebGL', id: 'fp-webgl' },
+      { label: 'FingerprintJS', id: 'fp-fingerprintjs' },
+      { label: 'ThumbmarkJS', id: 'fp-thumbmarkjs' },
+      { label: 'ClientJS', id: 'fp-clientjs' },
+      { label: 'FingerprintX', id: 'fp-fingerprintx' },
+      { label: 'Audio Signal Hash', id: 'fp-audiohash' }
+    ]
+    const escapeRegExp = (value: string) => value.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')
+    for (const { label, id } of providerRows) {
+      const escaped = escapeRegExp(label)
+      expect(text).toMatch(new RegExp(`<th[^>]*>${escaped}</th><td id=\"${id}\"`, 's'))
+    }
+
+    // Verify raw JSON containers exist for providers that expose details
+    const rawContainerIds = [
+      'fp-raw-fpjs-container',
+      'fp-raw-thumbmark-container',
+      'fp-raw-clientjs-container',
+      'fp-raw-fingerprintx-container',
+      'fp-raw-uach-container',
+      'fp-raw-audio-container',
+      'fp-raw-fonts-container',
+      'fp-raw-media-cap-container'
+    ]
+    for (const id of rawContainerIds) {
+      expect(text).toContain(`id="${id}"`)
+    }
+
+    // Verify some mock data is rendered
+    expect(text).toContain('Austin')
+    expect(text).toContain('US')
+
+    // Ensure fingerprinting logic does not unconditionally instantiate TextEncoder,
+    // which can throw in older Safari/webview environments.
+    expect(text).not.toContain('const textEncoder = new TextEncoder();')
+    expect(text).toContain("if (typeof TextEncoder !== 'undefined')")
   })
 
   it('should return JSON details on /json', async () => {
-    const req = new Request('http://example.com/json', {
+    const req = createMockRequest('http://example.com/json', {
         headers: { 'x-test-header': 'foobar' }
-    })
-    // Mock cf object
-    const env = {}
-    const ctx = { waitUntil: () => {}, passThroughOnException: () => {} } as any
-    // Hono handles the fetch, but for testing the worker export we can call it directly
-    // Ideally we pass a mocked cf object if we want to test it, but Request init doesn't easily support it in standard Request constructor without the Cloudflare types augmentation working perfectly in tests.
-    // However, Hono reads from req.raw.cf.
+    }, mockCf)
 
-    // We can use the app.request method for unit testing Hono, but here we are testing the worker export.
+    const env = {}
+    const ctx = createMockContext()
+
     const res = await worker.fetch(req, env, ctx)
 
     expect(res.status).toBe(200)
@@ -35,43 +118,49 @@ describe('Worker', () => {
 
     const data = await res.json() as any
     expect(data.requestHeaders['x-test-header']).toBe('foobar')
+
+    // Verify mocked CF data
+    expect(data.country).toBe('US')
+    expect(data.colo).toBe('DFW')
+    expect(data.botManagement.score).toBe(99)
   })
 
   it('should return client IP on /ip', async () => {
-    // We can't easily mock the CF-Connecting-IP header in the incoming request object effectively unless we use a specific helper or just trust the header passing.
-    const req = new Request('http://example.com/ip', {
+    const req = createMockRequest('http://example.com/ip', {
         headers: { 'CF-Connecting-IP': '1.2.3.4' }
     })
-    const res = await worker.fetch(req, {}, {} as any)
+    const res = await worker.fetch(req, {}, createMockContext())
     expect(await res.text()).toBe('1.2.3.4')
   })
 
   it('should echo custom status code', async () => {
-    const res = await worker.fetch(new Request('http://example.com/status/418'), {}, {} as any)
+    const req = createMockRequest('http://example.com/status/418')
+    const res = await worker.fetch(req, {}, createMockContext())
     expect(res.status).toBe(418)
     expect(await res.text()).toContain('Returned status: 418')
   })
 
   it('should handle invalid status code gracefully', async () => {
-    const res = await worker.fetch(new Request('http://example.com/status/999'), {}, {} as any)
+    const req = createMockRequest('http://example.com/status/999')
+    const res = await worker.fetch(req, {}, createMockContext())
     // Expect 400 Bad Request
     expect(res.status).toBe(400)
   })
 
   it('should echo user agent', async () => {
-    const req = new Request('http://example.com/user-agent', {
+    const req = createMockRequest('http://example.com/user-agent', {
         headers: { 'User-Agent': 'Vitest-Agent' }
     })
-    const res = await worker.fetch(req, {}, {} as any)
+    const res = await worker.fetch(req, {}, createMockContext())
     expect(await res.text()).toBe('Vitest-Agent')
   })
 
   it('should escape HTML in headers to prevent XSS', async () => {
     const malicious = "<script>alert('XSS')</script>"
-    const req = new Request('http://example.com/', {
+    const req = createMockRequest('http://example.com/', {
         headers: { 'X-Malicious': malicious }
     })
-    const res = await worker.fetch(req, {}, {} as any)
+    const res = await worker.fetch(req, {}, createMockContext())
     const text = await res.text()
 
     // Should NOT contain the raw script tag

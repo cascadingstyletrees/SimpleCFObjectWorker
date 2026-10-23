@@ -1,25 +1,5 @@
 import { describe, it, expect } from 'vitest'
-
-// We need to export flattenObject from view.tsx to test it,
-// or copy it here. Since view.tsx doesn't export it (it's internal),
-// I will copy it here for unit testing the logic.
-// Ideally we should export it or move to a utils file.
-// But for this task, copying is acceptable validation.
-
-const flattenObject = (obj: any, prefix = '') => {
-  const result: any = {};
-  const traverse = (current: any, p: string) => {
-    if (typeof current === 'object' && current !== null && !Array.isArray(current)) {
-      Object.keys(current).forEach(key => {
-        traverse(current[key], p ? `${p}.${key}` : key);
-      });
-    } else {
-      result[p] = current;
-    }
-  };
-  traverse(obj, prefix);
-  return result;
-};
+import { flattenObject } from './utils'
 
 describe('flattenObject', () => {
   it('should flatten nested objects', () => {
@@ -56,5 +36,26 @@ describe('flattenObject', () => {
 
   it('should handle empty objects', () => {
       expect(flattenObject({})).toEqual({});
+  });
+
+  it('should flatten deeply nested objects without overflowing the call stack', () => {
+    let input: any = 'leaf';
+    for (let i = 0; i < 20000; i++) {
+      input = { child: input };
+    }
+
+    const result = flattenObject(input);
+    expect(Object.keys(result)).toEqual([Array(20000).fill('child').join('.')]);
+    expect(Object.values(result)).toEqual(['leaf']);
+  });
+
+  it('should preserve prefixes and depth-first property order', () => {
+    const result = flattenObject({ a: { b: 1, c: 2 }, d: null, e: [3] }, 'root');
+    expect(Object.entries(result)).toEqual([
+      ['root.a.b', 1],
+      ['root.a.c', 2],
+      ['root.d', null],
+      ['root.e', [3]],
+    ]);
   });
 });
